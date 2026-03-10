@@ -39,6 +39,10 @@ export default function DashboardLayout({
             <span className="nav-icon">💰</span>
             <span>Financeiro</span>
           </Link>
+          <Link href="/dashboard/marketing" className={`nav-item ${pathname === '/dashboard/marketing' ? 'active' : ''}`}>
+            <span className="nav-icon">🎯</span>
+            <span>Marketing (PRO)</span>
+          </Link>
           <Link href="/dashboard/configuracoes" className={`nav-item ${pathname === '/dashboard/configuracoes' ? 'active' : ''}`}>
             <span className="nav-icon">⚙️</span>
             <span>Configurações</span>

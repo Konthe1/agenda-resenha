@@ -4,6 +4,32 @@ import { useState } from "react";
 
 export default function ConfiguracoesPage() {
   const [activeTab, setActiveTab] = useState("perfil");
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
+  const [isFetchingQrCode, setIsFetchingQrCode] = useState(false);
+  const [qrCodeMessage, setQrCodeMessage] = useState("");
+
+  const handleGenerateQR = async () => {
+    setIsFetchingQrCode(true);
+    setQrCodeMessage("Aguarde, gerando código secreto...");
+    setQrCodeData(null);
+    try {
+      const res = await fetch('/api/whatsapp/connect', { method: 'POST' });
+      const data = await res.json();
+      
+      if (data.qrcode) {
+        setQrCodeData(data.qrcode);
+        setQrCodeMessage("Escaneie o QR Code abaixo com o WhatsApp da Barbearia");
+      } else if (data.alreadyConnected) {
+         setQrCodeMessage("Seu número já está conectado e pronto para disparos! ✅");
+      } else {
+         setQrCodeMessage("Houve um erro: " + (data.error || "Tente novamente."));
+      }
+    } catch (e) {
+      setQrCodeMessage("Erro de conexão com o servidor de mensagens.");
+    } finally {
+      setIsFetchingQrCode(false);
+    }
+  };
 
   return (
     <div className="animate-fade-in">
@@ -83,6 +109,36 @@ export default function ConfiguracoesPage() {
               <p style={{ color: 'var(--text-secondary)', textAlign: 'center' }}>
                 As configurações avançadas desta aba estarão disponíveis nas próximas semanas.
               </p>
+            </div>
+          )}
+
+          {activeTab === 'integracoes' && (
+            <div>
+              <h2 style={{ marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>Robô de WhatsApp</h2>
+              
+              <div className="section-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', background: 'var(--bg-secondary)', border: '1px dashed var(--border-color)' }}>
+                 <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📱</div>
+                 <h3 style={{ marginBottom: '0.5rem', color: 'var(--accent-primary)' }}>Conecte o seu celular</h3>
+                 <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', maxWidth: '400px' }}>
+                   Para que o sistema envie lembretes automáticos para seus clientes, precisamos nos conectar ao WhatsApp da sua barbearia (como se fosse o WhatsApp Web).
+                 </p>
+
+                 {qrCodeData ? (
+                   <div style={{ background: 'white', padding: '15px', borderRadius: '12px', display: 'inline-block' }}>
+                     <img src={qrCodeData} alt="WhatsApp QR Code" style={{ width: '250px', height: '250px' }} />
+                   </div>
+                 ) : (
+                   <button onClick={handleGenerateQR} disabled={isFetchingQrCode} className="btn-primary" style={{ padding: '0.8rem 1.5rem', background: isFetchingQrCode ? 'var(--bg-primary)' : '#25D366', color: 'white' }}>
+                     {isFetchingQrCode ? 'Gerando Conexão...' : '🔗 Gerar QR Code agora'}
+                   </button>
+                 )}
+                 
+                 {qrCodeMessage && (
+                   <p style={{ marginTop: '1.5rem', fontWeight: '500', color: qrCodeData ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                     {qrCodeMessage}
+                   </p>
+                 )}
+              </div>
             </div>
           )}
         </div>

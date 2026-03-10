@@ -134,7 +134,7 @@ export default function Home() {
             <div className="pricing-card">
               <div className="pricing-header">
                 <h3>Básico (1 a 2 Barbeiros)</h3>
-                <div className="price"><span>R$</span>49<span>/mês</span></div>
+                <div className="price"><span>R$</span>59<span>,99 /mês</span></div>
                 <div className="price-sub">Cobrado mensalmente</div>
               </div>
               <ul className="pricing-features">
@@ -158,8 +158,8 @@ export default function Home() {
               <div className="popular-badge">Mais Escolhido</div>
               <div className="pricing-header">
                 <h3>Resenha Pro (Ilimitado)</h3>
-                <div className="price"><span>R$</span>97<span>/mês</span></div>
-                <div className="price-sub">Para equipes em crescimento</div>
+                <div className="price"><span>R$</span>149<span>,99 /mês</span></div>
+                <div className="price-sub">Para barbearias em crescimento</div>
               </div>
               <ul className="pricing-features">
                 <li>
