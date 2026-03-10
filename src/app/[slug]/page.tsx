@@ -139,11 +139,26 @@ export default function BookingPage() {
 
         const dtFim = new Date(dtInicio.getTime() + selectedService.duracao_minutos * 60000);
 
+        // 1.5 Fetch any active barbeiro so we don't violate foreign key
+        const { data: barbeiroArray } = await supabase
+          .from('barbeiros')
+          .select('id')
+          .eq('barbearia_id', barbearia.id)
+          .limit(1);
+
+        const activeBarbeiroId = barbeiroArray?.[0]?.id;
+        
+        if (!activeBarbeiroId) {
+           setError("A barbearia não possui profissionais cadastrados ainda.");
+           setIsSubmitting(false);
+           return;
+        }
+
         // 2. Create Appointment
         await supabase.from('agendamentos').insert({
           barbearia_id: barbearia.id,
           cliente_id: clientId,
-          barbeiro_id: 'd19d6d33-91b4-4e4b-bb99-923f6e16a241', // UUID falso para passar na foreign key na hora da DEMO local
+          barbeiro_id: activeBarbeiroId,
           servico_id: selectedService.id,
           data_hora_inicio: dtInicio.toISOString(),
           data_hora_fim: dtFim.toISOString(),
