@@ -12,9 +12,9 @@ export default function Home() {
 
       {/* Navbar */}
       <nav className="navbar">
-        <div className="nav-brand">
-          <img src="/logo.png" alt="Logo" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'contain' }} />
-          <span>Agenda<span className="accent">Resenha</span></span>
+        <div className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <img src="/logo.png" alt="Logo" style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'contain' }} />
+          <span style={{ fontSize: '1.5rem' }}>Agenda<span className="accent">Resenha</span></span>
         </div>
         <div className="nav-links">
           <a href="#recursos" className="nav-link">Recursos</a>
@@ -183,8 +183,13 @@ export default function Home() {
                   Fidelidade, Cashback e Mensagens em Massa
                 </li>
               </ul>
-              <Link href="/login" className="btn-primary" style={{ marginBottom: '1rem' }}>Assinar Mensal</Link>
-              <Link href="/login" className="btn-secondary" style={{ width: '100%', padding: '0.8rem', fontSize: '0.9rem' }}>Plano Anual: R$ 1.000/ano (Economize R$ 799)</Link>
+              <Link href="/login" className="btn-primary" style={{ width: '100%', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.2rem', background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', border: 'none', boxShadow: '0 4px 14px 0 rgba(249, 115, 22, 0.39)', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>Assinar Plano Anual 🏆</span>
+                  <span style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 400 }}>Apenas R$ 83,33/mês (Economize 44%)</span>
+              </Link>
+              <Link href="/login" style={{ display: 'block', textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)', textDecoration: 'underline' }}>
+                  Ou assine contrato mensal por R$ 149,99
+              </Link>
             </div>
           </div>
         </section>
@@ -246,9 +251,9 @@ export default function Home() {
       <footer className="footer">
         <div className="footer-content">
           <div className="footer-col">
-            <div className="nav-brand" style={{ marginBottom: '1rem' }}>
-              <img src="/logo.png" alt="Logo" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'contain' }} />
-              <span>Agenda<span className="accent">Resenha</span></span>
+            <div className="nav-brand" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <img src="/logo.png" alt="Logo" style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'contain' }} />
+              <span style={{ fontSize: '1.5rem' }}>Agenda<span className="accent">Resenha</span></span>
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.5' }}>
               O SaaS que transforma qualquer barbearia comum em uma operação moderna e lucrativa. Feito com amor por quem entende de cabelo e código.
