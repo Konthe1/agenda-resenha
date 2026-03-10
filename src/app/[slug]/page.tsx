@@ -45,46 +45,56 @@ export default function BookingPage() {
     async function loadBarbearia() {
       if (!slug) return;
       
+      // Clean up the slug (in case the user accidentally copied a trailing dot or space)
+      const cleanSlug = (slug as string).replace(/[\.\s]+$/, '');
+      
       // 1. Fetch Tenant (Barbearia)
       const { data: bData, error: bErr } = await supabase
         .from("barbearias")
         .select("*")
-        .eq("slug", slug as string)
+        .eq("slug", cleanSlug)
         .single();
         
+      let activeBarbearia = bData;
+
       if (bErr || !bData) {
-        if (slug === 'resenhabarber') {
+        if (cleanSlug === 'resenhabarber') {
           // Fallback para a DEMO fluida caso o dono ainda nao tenha criado a barbearia no BD
-          setBarbearia({
+          activeBarbearia = {
             id: '1',
             nome: 'Resenha Barber',
             logo_url: '/logo.png',
             cor_primaria: '#F97316'
-          });
+          };
+          setBarbearia(activeBarbearia);
         } else {
           setError("Barbearia não encontrada.");
           setLoading(false);
           return;
         }
       } else {
-        setBarbearia(bData);
+        setBarbearia(activeBarbearia);
       }
 
       // 2. Fetch Services
-      const { data: sData } = await supabase
-        .from("servicos")
-        .select("*")
-        .eq("barbearia_id", bData.id)
-        .eq("ativo", true);
+      let sData = null;
+      if (activeBarbearia.id !== '1') {
+        const { data } = await supabase
+          .from("servicos")
+          .select("*")
+          .eq("barbearia_id", activeBarbearia.id)
+          .eq("ativo", true);
+        sData = data;
+      }
         
       if (sData && sData.length > 0) {
         setServicos(sData);
       } else {
         // Fallback for Demo without DB
         setServicos([
-          { id: '1', nome: 'Corte Degradê', descricao: 'Máquina + Tesoura', preco: 35, duracao_minutos: 30 },
-          { id: '2', nome: 'Barba Terapia', descricao: 'Toalha quente e massagem', preco: 30, duracao_minutos: 30 },
-          { id: '3', nome: 'Combo Completo', descricao: 'Corte + Barba + Sobrancelha', preco: 70, duracao_minutos: 60 },
+          { id: '1', nome: 'Corte Degradê na Régua', descricao: 'Máquina + Tesoura', preco: 45, duracao_minutos: 45 },
+          { id: '2', nome: 'Barba Terapia', descricao: 'Toalha quente e massagem', preco: 35, duracao_minutos: 30 },
+          { id: '3', nome: 'Combo Completo', descricao: 'Corte + Barba + Sobrancelha', preco: 90, duracao_minutos: 80 },
         ]);
       }
 
