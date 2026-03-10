@@ -102,13 +102,76 @@ export default function ConfiguracoesPage() {
             </div>
           )}
 
-          {activeTab !== 'perfil' && (
-            <div style={{ minHeight: '30vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚙️</div>
-              <h2 style={{ marginBottom: '1rem' }}>Módulo em Desenvolvimento</h2>
-              <p style={{ color: 'var(--text-secondary)', textAlign: 'center' }}>
-                As configurações avançadas desta aba estarão disponíveis nas próximas semanas.
-              </p>
+          {activeTab === 'servicos' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
+                <h2>Serviços e Preços</h2>
+                <button className="btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}>+ Novo Serviço</button>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <div>
+                     <h3 style={{ marginBottom: '0.25rem' }}>Corte Degradê na Régua</h3>
+                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Máquina, gilete e finalização com pomada • 45 min</p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                     <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>R$ 45,00</span>
+                     <button className="btn-text" style={{ padding: '0.5rem' }}>✏️</button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <div>
+                     <h3 style={{ marginBottom: '0.25rem' }}>Barba Terapia Completa</h3>
+                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Toalha quente, ozônio e massagem facial • 30 min</p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                     <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>R$ 35,00</span>
+                     <button className="btn-text" style={{ padding: '0.5rem' }}>✏️</button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <div>
+                     <h3 style={{ marginBottom: '0.25rem' }}>Combo VIP (Corte + Barba + Sobrancelha)</h3>
+                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Serviço completo VIP • 1h 20m</p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                     <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--accent-primary)' }}>R$ 90,00</span>
+                     <button className="btn-text" style={{ padding: '0.5rem' }}>✏️</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'horarios' && (
+            <div>
+              <h2 style={{ marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>Horários de Funcionamento</h2>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                {['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'].map((dia, i) => (
+                  <div key={dia} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)', opacity: dia === 'Domingo' ? 0.6 : 1 }}>
+                    <div style={{ width: '100px', fontWeight: '500' }}>{dia}</div>
+                    
+                    {dia === 'Domingo' ? (
+                       <div style={{ flex: 1, color: 'var(--text-secondary)', textAlign: 'center' }}>Fechado</div>
+                    ) : (
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <input type="time" defaultValue="09:00" style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} />
+                          <span style={{ color: 'var(--text-secondary)' }}>até</span>
+                          <input type="time" defaultValue={dia === 'Sábado' ? "17:00" : "20:00"} style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} />
+                       </div>
+                    )}
+                    
+                    <label className="switch">
+                      <input type="checkbox" defaultChecked={dia !== 'Domingo'} />
+                      <span className="slider round"></span>
+                    </label>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

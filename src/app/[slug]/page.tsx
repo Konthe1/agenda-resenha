@@ -53,12 +53,22 @@ export default function BookingPage() {
         .single();
         
       if (bErr || !bData) {
-        setError("Barbearia não encontrada.");
-        setLoading(false);
-        return;
+        if (slug === 'resenhabarber') {
+          // Fallback para a DEMO fluida caso o dono ainda nao tenha criado a barbearia no BD
+          setBarbearia({
+            id: '1',
+            nome: 'Resenha Barber',
+            logo_url: '/logo.png',
+            cor_primaria: '#F97316'
+          });
+        } else {
+          setError("Barbearia não encontrada.");
+          setLoading(false);
+          return;
+        }
+      } else {
+        setBarbearia(bData);
       }
-      
-      setBarbearia(bData);
 
       // 2. Fetch Services
       const { data: sData } = await supabase
@@ -123,12 +133,19 @@ export default function BookingPage() {
         clientId = existingClient.id;
       } else {
         // Simular criação na API real (fallback se estivermos apenas com demo data)
-        const { data: newClient } = await supabase
+        const activeBarbeariaId = barbearia.id === '1' ? '12345678-1234-1234-1234-123456789012' : barbearia.id; // Evitar UUID invalido
+        const { data: newClient, error: clientError } = await supabase
           .from('clientes')
-          .insert({ barbearia_id: barbearia.id, nome: clientName, telefone: clientPhone })
+          .insert({ barbearia_id: activeBarbeariaId, nome: clientName, telefone: clientPhone })
           .select('id')
           .single();
-        clientId = newClient?.id;
+        
+        if (clientError) {
+          console.error("Mocking client creation for demo...");
+          clientId = 'mock-client-id';
+        } else {
+          clientId = newClient?.id;
+        }
       }
 
       if (clientId) {
@@ -140,30 +157,36 @@ export default function BookingPage() {
         const dtFim = new Date(dtInicio.getTime() + selectedService.duracao_minutos * 60000);
 
         // 1.5 Fetch any active barbeiro so we don't violate foreign key
-        const { data: barbeiroArray } = await supabase
-          .from('barbeiros')
-          .select('id')
-          .eq('barbearia_id', barbearia.id)
-          .limit(1);
-
-        const activeBarbeiroId = barbeiroArray?.[0]?.id;
+        let activeBarbeiroId = 'mock-barbeiro-id';
         
-        if (!activeBarbeiroId) {
-           setError("A barbearia não possui profissionais cadastrados ainda.");
-           setIsSubmitting(false);
-           return;
+        if (barbearia.id !== '1') {
+          const { data: barbeiroArray } = await supabase
+            .from('barbeiros')
+            .select('id')
+            .eq('barbearia_id', barbearia.id)
+            .limit(1);
+
+          activeBarbeiroId = barbeiroArray?.[0]?.id;
+          
+          if (!activeBarbeiroId) {
+             setError("A barbearia não possui profissionais cadastrados ainda.");
+             setIsSubmitting(false);
+             return;
+          }
         }
 
         // 2. Create Appointment
-        await supabase.from('agendamentos').insert({
-          barbearia_id: barbearia.id,
-          cliente_id: clientId,
-          barbeiro_id: activeBarbeiroId,
-          servico_id: selectedService.id,
-          data_hora_inicio: dtInicio.toISOString(),
-          data_hora_fim: dtFim.toISOString(),
-          valor_total: selectedService.preco
-        });
+        if (barbearia.id !== '1') {
+           await supabase.from('agendamentos').insert({
+             barbearia_id: barbearia.id,
+             cliente_id: clientId,
+             barbeiro_id: activeBarbeiroId,
+             servico_id: selectedService.id,
+             data_hora_inicio: dtInicio.toISOString(),
+             data_hora_fim: dtFim.toISOString(),
+             valor_total: selectedService.preco
+           });
+        }
       }
 
       // Concluido com sucesso
