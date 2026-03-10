@@ -162,7 +162,7 @@ export default function AgendaPage() {
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <div style={{ display: 'flex', background: 'var(--bg-secondary)', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
             <button onClick={prevWeek} className="btn-text" style={{ padding: '0.5rem 1rem', borderRight: '1px solid var(--border-color)' }}>←</button>
-            <span style={{ padding: '0.5rem 1rem', fontWeight: 500 }}>
+            <span style={{ padding: '0.5rem 1rem', fontWeight: 500, whiteSpace: 'nowrap' }}>
               {weekDays[0].toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' })} a {weekDays[6].toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' })}
             </span>
             <button onClick={nextWeek} className="btn-text" style={{ padding: '0.5rem 1rem', borderLeft: '1px solid var(--border-color)' }}>→</button>

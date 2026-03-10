@@ -13,7 +13,7 @@ export default function Home() {
       {/* Navbar */}
       <nav className="navbar">
         <div className="nav-brand">
-          <img src="/logo.png" alt="Logo" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'contain' }} />
+          <img src="/logo.png" alt="Logo" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'contain' }} />
           <span>Agenda<span className="accent">Resenha</span></span>
         </div>
         <div className="nav-links">
@@ -172,14 +172,19 @@ export default function Home() {
                 </li>
                 <li>
                   <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                  Multi-profissionais ilimitados
+                  Gestão de Produtos (Estoque / Vendas)
                 </li>
                 <li>
                   <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                  Split de pagamentos e comissões
+                  Planos Pré-Pagos / Mensalistas
+                </li>
+                <li>
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                  Fidelidade, Cashback e Mensagens em Massa
                 </li>
               </ul>
-              <Link href="/login" className="btn-primary">Assinar Pro</Link>
+              <Link href="/login" className="btn-primary" style={{ marginBottom: '1rem' }}>Assinar Mensal</Link>
+              <Link href="/login" className="btn-secondary" style={{ width: '100%', padding: '0.8rem', fontSize: '0.9rem' }}>Plano Anual: R$ 1.000/ano (Economize R$ 799)</Link>
             </div>
           </div>
         </section>
@@ -242,7 +247,7 @@ export default function Home() {
         <div className="footer-content">
           <div className="footer-col">
             <div className="nav-brand" style={{ marginBottom: '1rem' }}>
-              <img src="/logo.png" alt="Logo" style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'contain' }} />
+              <img src="/logo.png" alt="Logo" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'contain' }} />
               <span>Agenda<span className="accent">Resenha</span></span>
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.5' }}>

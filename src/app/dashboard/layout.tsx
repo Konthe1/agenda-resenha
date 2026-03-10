@@ -17,7 +17,7 @@ export default function DashboardLayout({
       <aside className="sidebar">
         <div className="sidebar-header">
           <div className="sidebar-brand">
-            <img src="/logo.png" alt="Logo" style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'contain' }} />
+            <img src="/logo.png" alt="Logo" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'contain' }} />
             <span>Resenha<span className="accent">Admin</span></span>
           </div>
         </div>
@@ -42,6 +42,14 @@ export default function DashboardLayout({
           <Link href="/dashboard/marketing" className={`nav-item ${pathname === '/dashboard/marketing' ? 'active' : ''}`}>
             <span className="nav-icon">🎯</span>
             <span>Marketing (PRO)</span>
+          </Link>
+          <Link href="/dashboard/produtos" className={`nav-item ${pathname === '/dashboard/produtos' ? 'active' : ''}`}>
+            <span className="nav-icon">🛍️</span>
+            <span>Produtos (PRO)</span>
+          </Link>
+          <Link href="/dashboard/planos" className={`nav-item ${pathname === '/dashboard/planos' ? 'active' : ''}`}>
+            <span className="nav-icon">🎟️</span>
+            <span>Assinaturas (PRO)</span>
           </Link>
           <Link href="/dashboard/configuracoes" className={`nav-item ${pathname === '/dashboard/configuracoes' ? 'active' : ''}`}>
             <span className="nav-icon">⚙️</span>

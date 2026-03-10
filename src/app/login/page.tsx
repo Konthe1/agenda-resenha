@@ -38,7 +38,7 @@ export default function Login() {
       <div className="auth-card animate-fade-in">
         <div className="auth-header">
           <div className="auth-logo">
-            <img src="/logo.png" alt="Logo" style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'contain' }} />
+            <img src="/logo.png" alt="Logo" style={{ width: '56px', height: '56px', borderRadius: '10px', objectFit: 'contain' }} />
             <span>Agenda<span className="accent">Resenha</span></span>
           </div>
           <h1>{isRegister ? 'Crie sua conta' : 'Acesse seu Painel'}</h1>

@@ -9,7 +9,7 @@ export default function Docs() {
       {/* Navbar Minimalista (Reaproveitada) */}
       <nav className="navbar" style={{ borderBottom: '1px solid var(--bg-tertiary)' }}>
         <Link href="/" className="nav-brand">
-          <img src="/logo.png" alt="Logo" style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'contain' }} />
+          <img src="/logo.png" alt="Logo" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'contain' }} />
           <span>Agenda<span className="accent">Resenha</span></span>
         </Link>
         <div className="nav-actions">

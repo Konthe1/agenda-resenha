@@ -6,7 +6,7 @@ export default function TermosPage() {
     <div className="landing-container">
       <nav className="navbar" style={{ padding: '1rem 5%', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         <Link href="/" className="nav-brand" style={{ textDecoration: 'none' }}>
-          <img src="/logo.png" alt="Logo" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'contain' }} />
+          <img src="/logo.png" alt="Logo" style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'contain' }} />
           <span>Agenda<span className="accent">Resenha</span></span>
         </Link>
         <div className="nav-actions">
