@@ -2,16 +2,15 @@ import { NextResponse } from 'next/server';
 import { sendWhatsAppMessage, buildConfirmationMessage } from '@/lib/whatsapp';
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase client bypassing RLS (Service Role) 
-// Only for server-side where we need to fetch info about the newly created appointment
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // IMPORTANTE: Variável de ambiente privada!
-);
-
 // Este Webhook será chamado via HTTP POST pelo Banco de Dados (Supabase Database Webhooks)
 // Toda vez que um novo INSERT acontecer na tabela 'agendamentos'
 export async function POST(req: Request) {
+  // Supabase client bypassing RLS (Service Role) 
+  // Only for server-side onde precisamos buscar info ignorando regras de usuário
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  
+  const supabase = createClient(supabaseUrl, supabaseKey);
   try {
     const body = await req.json();
     
