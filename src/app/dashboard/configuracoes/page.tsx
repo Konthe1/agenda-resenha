@@ -1,26 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase/client";
 
 export default function ConfiguracoesPage() {
   const [activeTab, setActiveTab] = useState("perfil");
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
   const [isFetchingQrCode, setIsFetchingQrCode] = useState(false);
   const [qrCodeMessage, setQrCodeMessage] = useState("");
-  const [planoAtual, setPlanoAtual] = useState<"basico" | "pro">("pro"); // Simulação do plano ativo
+  const [planoAtual, setPlanoAtual] = useState<"basico" | "pro">("pro"); 
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [barbeiros, setBarbeiros] = useState([
-    { id: 1, nome: "Marcos (Chefe)", especialidade: "Fade e Tesoura", foto: "M" },
-    { id: 2, nome: "Thiago", especialidade: "Barba e Sobrancelha", foto: "T" },
-    { id: 3, nome: "Lucas", especialidade: "Degradê e Freestyle", foto: "L" },
-  ]);
+  const [barbeiros, setBarbeiros] = useState<any[]>([]);
+  const [servicos, setServicos] = useState<any[]>([]);
+  const [editingServiceId, setEditingServiceId] = useState<any>(null);
 
-  const [servicos, setServicos] = useState<{ id: number, nome: string, descricao: string, precos: Record<number, number> }[]>([
-    { id: 1, nome: "Corte Degradê na Régua", descricao: "Máquina, gilete e finalização com pomada • 45 min", precos: { 1: 45, 2: 40, 3: 35 } },
-    { id: 2, nome: "Barba Terapia Completa", descricao: "Toalha quente, ozônio e massagem facial • 30 min", precos: { 1: 35, 2: 35, 3: 30 } },
-    { id: 3, nome: "Combo VIP (Corte + Barba)", descricao: "Serviço completo VIP • 1h 20m", precos: { 1: 90, 2: 80, 3: 75 } }
-  ]);
-  const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true);
+      // Fetch barbers
+      const { data: bData } = await supabase.from('barbeiros').select('*').order('nome');
+      if (bData && bData.length > 0) {
+        setBarbeiros(bData);
+      }
+      
+      // Fetch services
+      const { data: sData } = await supabase.from('servicos').select('*').order('nome');
+      if (sData && sData.length > 0) {
+        setServicos(sData);
+      }
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
 
   const limiteBarbeiros = 5;
   const valorAdicionalPorBarbeiro = 50.00;
@@ -134,10 +146,12 @@ export default function ConfiguracoesPage() {
                 <button 
                   className="btn-primary" 
                   style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}
-                  onClick={() => {
-                     const newId = Date.now();
-                     setServicos([{ id: newId, nome: "Novo Serviço", descricao: "Breve descrição • 30 min", precos: {} }, ...servicos]);
-                     setEditingServiceId(newId);
+                  onClick={async () => {
+                     const { data, error } = await supabase.from('servicos').insert({ barbearia_id: '1', nome: 'Novo Serviço', descricao: '', preco_base: 0, duracao_minutos: 30 }).select().single();
+                     if (data) {
+                       setServicos([{...data, precos_barbeiros: {}}, ...servicos]);
+                       setEditingServiceId(data.id);
+                     }
                   }}
                 >+ Novo Serviço</button>
               </div>
@@ -174,11 +188,17 @@ export default function ConfiguracoesPage() {
                       
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '1rem' }}>
                         {editingServiceId === servico.id ? (
-                          <button className="btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }} onClick={() => setEditingServiceId(null)}>Salvar</button>
+                          <button className="btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }} onClick={async () => {
+                            await supabase.from('servicos').update({ nome: servico.nome, descricao: servico.descricao, precos_barbeiros: servico.precos_barbeiros }).eq('id', servico.id);
+                            setEditingServiceId(null);
+                          }}>Salvar</button>
                         ) : (
                           <button className="btn-text" style={{ padding: '0.5rem' }} onClick={() => setEditingServiceId(servico.id)}>✏️ Editar</button>
                         )}
-                        <button className="btn-text" style={{ padding: '0.5rem', color: 'var(--accent-primary)' }} onClick={() => setServicos(servicos.filter(s => s.id !== servico.id))}>🗑️</button>
+                        <button className="btn-text" style={{ padding: '0.5rem', color: 'var(--accent-primary)' }} onClick={async () => {
+                          await supabase.from('servicos').delete().eq('id', servico.id);
+                          setServicos(servicos.filter(s => s.id !== servico.id));
+                        }}>🗑️</button>
                       </div>
                     </div>
 
@@ -256,7 +276,7 @@ export default function ConfiguracoesPage() {
                    <button 
                      className="btn-primary" 
                      style={{ padding: '0.4rem 1rem', fontSize: '0.9rem', background: (planoAtual === 'pro' && barbeiros.length >= limiteBarbeiros) ? 'transparent' : 'var(--accent-primary)', border: (planoAtual === 'pro' && barbeiros.length >= limiteBarbeiros) ? '1px dashed var(--accent-primary)' : 'none', color: (planoAtual === 'pro' && barbeiros.length >= limiteBarbeiros) ? 'var(--accent-primary)' : 'white' }}
-                     onClick={() => {
+                     onClick={async () => {
                         if (planoAtual === 'basico' && barbeiros.length >= 1) {
                            alert('Seu Plano Básico permite apenas 1 barbeiro exclusivo. Fale conosco para fazer um Upgrade para o PRO e adicionar mais membros à sua barbearia!');
                            return;
@@ -265,7 +285,9 @@ export default function ConfiguracoesPage() {
                            alert('Sua solicitação de Barbeiro Adicional no valor de R$ 50,00/mês foi enviada para o administrador. Aguarde a aprovação para liberar o novo slot em sua agenda.');
                            return;
                         }
-                        setBarbeiros([...barbeiros, { id: Date.now(), nome: "Novo Barbeiro", especialidade: "Sem Especialidade Definida", foto: "?" }]);
+                        const foto = "N";
+                        const { data } = await supabase.from('barbeiros').insert({ barbearia_id: '1', nome: 'Novo Barbeiro', especialidade: '...', foto_url: foto, ativo: true }).select().single();
+                        if (data) setBarbeiros([...barbeiros, data]);
                      }}
                    >
                      {(planoAtual === 'pro' && barbeiros.length >= limiteBarbeiros) ? '📝 Solicitar Adicional (+R$50)' : '+ Novo Barbeiro'}
@@ -322,7 +344,10 @@ export default function ConfiguracoesPage() {
                         className="btn-text" 
                         style={{ padding: '0.5rem', color: 'var(--accent-primary)' }} 
                         title="Remover"
-                        onClick={() => setBarbeiros(barbeiros.filter(b => b.id !== barbeiro.id))}
+                        onClick={async () => {
+                           await supabase.from('barbeiros').delete().eq('id', barbeiro.id);
+                           setBarbeiros(barbeiros.filter(b => b.id !== barbeiro.id));
+                        }}
                       >🗑️</button>
                     </div>
                   </div>
