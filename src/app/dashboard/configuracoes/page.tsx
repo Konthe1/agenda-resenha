@@ -202,6 +202,74 @@ export default function ConfiguracoesPage() {
                    </p>
                  )}
               </div>
+
+              <h3 style={{ marginTop: '3rem', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>🤖 Mensagens Automáticas (Templates)</h3>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+                Ative e personalize o texto que o seu cliente vai receber no WhatsApp. Use as variáveis como <code>{`{{cliente}}`}</code>, <code>{`{{data}}`}</code>, etc.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                {/* Template 1 */}
+                <div style={{ background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h4 style={{ fontSize: '1.1rem' }}>✅ Agendamento Confirmado</h4>
+                    <label className="switch">
+                      <input type="checkbox" defaultChecked />
+                      <span className="slider round"></span>
+                    </label>
+                  </div>
+                  <textarea 
+                    style={{ width: '100%', height: '100px', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', resize: 'vertical' }}
+                    defaultValue="Fala {{cliente}}! Seu horário na Resenha Barber ta confirmado pra {{data}} às {{hora}} com o brabo do {{barbeiro}}. Tmj! ✂️🔥"
+                  />
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Disparado assim que o cliente finaliza o agendamento no link.</p>
+                </div>
+
+                {/* Template 2 */}
+                <div style={{ background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h4 style={{ fontSize: '1.1rem' }}>⏰ Lembrete (30 Minutos Antes)</h4>
+                    <label className="switch">
+                      <input type="checkbox" defaultChecked />
+                      <span className="slider round"></span>
+                    </label>
+                  </div>
+                  <textarea 
+                    style={{ width: '100%', height: '100px', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', resize: 'vertical' }}
+                    defaultValue="Passando pra lembrar que seu horário é daqui a pouco, às {{hora}}! Não vai atrasar hein {{cliente}}? 🏃‍♂️💨"
+                  />
+                </div>
+
+                {/* Template 3 */}
+                <div style={{ background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h4 style={{ fontSize: '1.1rem' }}>💰 Cashback e Fidelidade (PRO)</h4>
+                    <label className="switch">
+                      <input type="checkbox" defaultChecked />
+                      <span className="slider round"></span>
+                    </label>
+                  </div>
+                  <textarea 
+                    style={{ width: '100%', height: '100px', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', resize: 'vertical' }}
+                    defaultValue="Valeu pela moral hoje {{cliente}}! Você acabou de ganhar {{pontos}} pontos no nosso programa. Falta pouco pro corte grátis! 🏆"
+                  />
+                </div>
+
+                 {/* Template 4 */}
+                 <div style={{ background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h4 style={{ fontSize: '1.1rem' }}>🎟️ Assinaturas e Planos (PRO)</h4>
+                    <label className="switch">
+                      <input type="checkbox" defaultChecked />
+                      <span className="slider round"></span>
+                    </label>
+                  </div>
+                  <textarea 
+                    style={{ width: '100%', height: '100px', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', resize: 'vertical' }}
+                    defaultValue="Fala {{cliente}}! Sua assinatura do plano {{plano}} foi renovada com sucesso! Você tem {{cortes_restantes}} cortes pra usar esse mês. Bora marcar? 🚀"
+                  />
+                </div>
+              </div>
             </div>
           )}
         </div>
