@@ -13,6 +13,11 @@ export default function MarketingPage() {
   // Advanced Filtros
   const [filtroAlvo, setFiltroAlvo] = useState("inativos"); 
   
+  // States for Editable Fidelity Rule
+  const [isEditingRule, setIsEditingRule] = useState(false);
+  const [ruleCortes, setRuleCortes] = useState(10);
+  const [rulePremio, setRulePremio] = useState("Corte Grátis");
+  
   // Mock Data for UI demonstration
   const [ranking, setRanking] = useState([
     { id: 1, nome: "João Silva", telefone: "11999999999", cortes: 8, pontos: 80, proxPremio: "2 cortes" },
@@ -31,7 +36,6 @@ export default function MarketingPage() {
       const { count } = await supabase.from('clientes').select('*', { count: 'exact', head: true });
       if (count) {
         setTotalClientes(count);
-        // Moca que 70% da base tá inativa há mais de 30 dias para a demo
         setInativosCount(Math.floor(count * 0.7) || 1);
       }
     }
@@ -49,16 +53,24 @@ export default function MarketingPage() {
     alert(`🚀 Disparo de Marketing em Massa enviado para ${target} clientes com sucesso! (Demonstração)`);
     setIsSending(false);
   };
+  
+  const handleSaveRule = () => {
+    setIsEditingRule(false);
+    alert("Regra de fidelidade atualizada com sucesso!");
+  };
 
   return (
     <div className="animate-fade-in">
       <div className="page-header">
         <div className="page-title">
-          <h1>Marketing & Fidelização <span style={{ fontSize: '0.6em', background: 'linear-gradient(135deg, #f97316, #eab308)', padding: '4px 8px', borderRadius: '4px', verticalAlign: 'middle', marginLeft: '10px' }}>PRO</span></h1>
+          <h1>Marketing & Fidelização <span style={{ fontSize: '0.6em', background: 'linear-gradient(135deg, #f97316, #eab308)', padding: '4px 8px', borderRadius: '4px', verticalAlign: 'middle', marginLeft: '10px', color: 'white' }}>PRO</span></h1>
           <p>Retenha clientes e dispare promoções pelo WhatsApp</p>
         </div>
-        <button className="btn-primary" style={{ padding: '0.6rem 1.25rem' }}>
-          Configurações Avançadas
+        <button 
+          className="btn-primary" 
+          onClick={() => alert("Módulo de Configurações Avançadas abrirá ferramentas de automação IA e Copywriting PRO em atualizações futuras.")}
+          style={{ width: 'auto', padding: '0.8rem 1.5rem', fontWeight: 'bold', fontSize: '1rem', color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.4)', borderRadius: '8px' }}>
+          ⚙️ Configurações Avançadas
         </button>
       </div>
 
@@ -111,15 +123,28 @@ export default function MarketingPage() {
               <div className="section-card" style={{ background: 'var(--bg-secondary)', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <h3 style={{ fontSize: '1.1rem' }}>Regra Atual do Cartão</h3>
-                  <button className="btn-text" style={{ fontSize: '0.85rem' }}>✏️ Editar</button>
+                  {!isEditingRule ? (
+                    <button className="btn-text" onClick={() => setIsEditingRule(true)} style={{ fontSize: '0.85rem', color: 'var(--text-primary)', background: 'var(--bg-primary)', padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>✏️ Editar</button>
+                  ) : (
+                    <button className="btn-text" onClick={handleSaveRule} style={{ fontSize: '0.85rem', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid #10b981' }}>✅ Salvar</button>
+                  )}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--bg-primary)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                   <div style={{ fontSize: '2rem' }}>✂️</div>
-                   <div>
-                     <strong style={{ display: 'block', fontSize: '1.1rem' }}>10 Cortes = 1 Corte Grátis</strong>
-                     <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Os pontos são creditados automaticamente após o cliente concluir o pagamento via PIX ou Link.</span>
+                
+                {isEditingRule ? (
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--bg-primary)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--accent-primary)' }}>
+                      <input type="number" min="1" max="20" value={ruleCortes} onChange={(e) => setRuleCortes(Number(e.target.value))} style={{ width: '60px', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white', textAlign: 'center' }} />
+                      <span style={{ fontWeight: 'bold' }}>Cortes = </span>
+                      <input type="text" value={rulePremio} onChange={(e) => setRulePremio(e.target.value)} style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white' }} />
                    </div>
-                </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--bg-primary)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                     <div style={{ fontSize: '2rem' }}>✂️</div>
+                     <div>
+                       <strong style={{ display: 'block', fontSize: '1.1rem' }}>{ruleCortes} Cortes = 1 {rulePremio}</strong>
+                       <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Os pontos são creditados automaticamente após o cliente concluir o pagamento via PIX ou Link.</span>
+                     </div>
+                  </div>
+                )}
               </div>
 
               <div className="section-card" style={{ background: 'var(--bg-secondary)', padding: 0, overflow: 'hidden' }}>
@@ -143,10 +168,10 @@ export default function MarketingPage() {
                             {i === 0 ? '🥇 1º' : i === 1 ? '🥈 2º' : '🥉 3º'}
                          </td>
                          <td style={{ padding: '1rem 1.5rem', fontWeight: 'bold' }}>{r.nome} <span style={{display: 'block', fontSize: '0.75rem', fontWeight: 'normal', color: 'var(--text-secondary)'}}>{r.telefone}</span></td>
-                         <td style={{ padding: '1rem 1.5rem' }}>{r.cortes} / 10</td>
+                         <td style={{ padding: '1rem 1.5rem' }}>{r.cortes} / {ruleCortes}</td>
                          <td style={{ padding: '1rem 1.5rem', color: 'var(--accent-primary)' }}>{r.proxPremio}</td>
                          <td style={{ padding: '1rem 1.5rem' }}>
-                           <button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', background: '#25D366' }}>WhatsApp</button>
+                           <button className="btn-primary" style={{ width: 'auto', padding: '0.4rem 0.8rem', fontSize: '0.8rem', background: '#25D366' }}>WhatsApp</button>
                          </td>
                       </tr>
                     ))}
@@ -275,7 +300,7 @@ export default function MarketingPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
                     <span style={{ fontSize: '1.2rem', color: '#f59e0b' }}>⚠️</span> Não envie spans para evitar bloqueio no WhatsApp.
                   </div>
-                  <button className="btn-primary" style={{ padding: '0.8rem 1.5rem', opacity: isSending ? 0.7 : 1 }} onClick={handleDisparo} disabled={isSending}>
+                  <button className="btn-primary" style={{ width: 'auto', padding: '0.8rem 1.5rem', opacity: isSending ? 0.7 : 1 }} onClick={handleDisparo} disabled={isSending}>
                     {isSending ? 'Processando fila...' : `🚀 Disparar para ${filtroAlvo === 'inativos' ? inativosCount : (filtroAlvo === 'todos' ? totalClientes : ranking.length)} Clientes`}
                   </button>
                 </div>

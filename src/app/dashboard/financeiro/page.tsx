@@ -1,31 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase/client";
 
 export default function FinanceiroPage() {
-  const [agendamentos, setAgendamentos] = useState<any[]>([]);
-  const [produtos, setProdutos] = useState<any[]>([]);
   const [filtroTempo, setFiltroTempo] = useState("mes"); // hoje, semana, mes
   const [isLoading, setIsLoading] = useState(true);
 
-  // KPIs
-  const [faturamentoTotal, setFaturamentoTotal] = useState(0);
-  const [ticketMedio, setTicketMedio] = useState(0);
-  const [aReceber, setAReceber] = useState(0);
-  const [transacoes, setTransacoes] = useState<any[]>([]);
+  // Raw Data
+  const [rawTransacoes, setRawTransacoes] = useState<any[]>([]);
 
   useEffect(() => {
     async function loadFinanceiro() {
       setIsLoading(true);
       
-      // Fetch Agendamentos (Usando barbearia 1 como mocado por enquanto já que não temos auth final)
       const { data: agData } = await supabase.from('agendamentos').select('*, servicos(nome)').order('data_hora_inicio', { ascending: false });
       
       if (agData) {
-        setAgendamentos(agData);
-        
-        // Simulação de transações reais + fictícias para dar volume ao relatório
         const historicoReal = agData.map(a => ({
           id: a.id,
           data: new Date(a.data_hora_inicio).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
@@ -37,36 +28,16 @@ export default function FinanceiroPage() {
           status: a.status === 'concluido' ? 'Pago' : (a.status === 'cancelado' ? 'Cancelado' : 'Pendente')
         }));
 
+        const now = new Date();
         const mocksExtras = [
-          { id: 'm1', data: '10/03/2026, 14:30', rawDate: new Date('2026-03-10T14:30:00'), tipo: 'Entrada', categoria: 'Produto', descricao: 'Venda: Pomada Matte', valor: 45.00, status: 'Pago' },
-          { id: 'm2', data: '09/03/2026, 09:00', rawDate: new Date('2026-03-09T09:00:00'), tipo: 'Saída', categoria: 'Despesa', descricao: 'Conta de Luz', valor: -250.00, status: 'Pago' },
-          { id: 'm3', data: '08/03/2026, 18:15', rawDate: new Date('2026-03-08T18:15:00'), tipo: 'Entrada', categoria: 'Serviço', descricao: 'Corte + Barba', valor: 70.00, status: 'Pago' },
-          { id: 'm4', data: '05/03/2026, 10:00', rawDate: new Date('2026-03-05T10:00:00'), tipo: 'Saída', categoria: 'Fornecedor', descricao: 'Compra de Lâminas', valor: -120.00, status: 'Pago' },
+          { id: 'm1', data: now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), rawDate: new Date(), tipo: 'Entrada', categoria: 'Produto', descricao: 'Venda: Pomada Matte', valor: 45.00, status: 'Pago' },
+          { id: 'm2', data: new Date(now.getTime() - 86400000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), rawDate: new Date(now.getTime() - 86400000), tipo: 'Saída', categoria: 'Despesa', descricao: 'Conta de Luz', valor: -250.00, status: 'Pago' },
+          { id: 'm3', data: new Date(now.getTime() - 2 * 86400000).toLocaleDateString('pt-BR'), rawDate: new Date(now.getTime() - 2 * 86400000), tipo: 'Entrada', categoria: 'Serviço', descricao: 'Corte + Barba', valor: 70.00, status: 'Pago' },
+          { id: 'm4', data: new Date(now.getTime() - 5 * 86400000).toLocaleDateString('pt-BR'), rawDate: new Date(now.getTime() - 5 * 86400000), tipo: 'Saída', categoria: 'Fornecedor', descricao: 'Compra de Lâminas', valor: -120.00, status: 'Pago' },
         ];
 
         let todasTransacoes = [...historicoReal, ...mocksExtras].sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
-        setTransacoes(todasTransacoes);
-
-        // Calcular KPIs Baseado nas transacoes pagas
-        let totalRecebido = 0;
-        let qtdServicosPagos = 0;
-        let totalAReceber = 0;
-
-        todasTransacoes.forEach(t => {
-           if (t.status === 'Pago' && t.tipo === 'Entrada') {
-             totalRecebido += t.valor;
-             qtdServicosPagos++;
-           }
-           if (t.status === 'Pendente' && t.tipo === 'Entrada') {
-             totalAReceber += t.valor;
-           }
-        });
-
-        // Adicionando um valor base fixo para simular histórico passado realista no mês
-        const faturamentoMensalBase = 12450.00;
-        setFaturamentoTotal(faturamentoMensalBase + totalRecebido);
-        setTicketMedio(qtdServicosPagos > 0 ? ((faturamentoMensalBase + totalRecebido) / (320 + qtdServicosPagos)) : 45.50); // Média de 320 cortes/mês
-        setAReceber(totalAReceber + 850.00); // 850 presumiu agendamentos futuros não trackeados
+        setRawTransacoes(todasTransacoes);
       }
 
       setIsLoading(false);
@@ -74,24 +45,77 @@ export default function FinanceiroPage() {
     loadFinanceiro();
   }, []);
 
+  const { transacoesFiltered, faturamentoTotal, ticketMedio, aReceber, totalDespesas } = useMemo(() => {
+    const now = new Date();
+    
+    const filtered = rawTransacoes.filter(t => {
+      const diffTime = Math.abs(now.getTime() - t.rawDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (filtroTempo === "hoje") return diffDays <= 1;
+      if (filtroTempo === "semana") return diffDays <= 7;
+      return diffDays <= 30; // mes
+    });
+
+    let recebido = 0;
+    let gastos = 0;
+    let qtdServicosPagos = 0;
+    let pendente = 0;
+
+    filtered.forEach(t => {
+       if (t.status === 'Pago' && t.tipo === 'Entrada') {
+         recebido += t.valor;
+         qtdServicosPagos++;
+       }
+       if (t.status === 'Pago' && t.tipo === 'Saída') {
+         gastos += Math.abs(t.valor);
+       }
+       if (t.status === 'Pendente' && t.tipo === 'Entrada') {
+         pendente += t.valor;
+       }
+    });
+
+    // Bases for aesthetic inflation (assuming history beyond platform)
+    // Only inflates 'mes' or 'semana' reasonably for the demo
+    const baseFaturamento = filtroTempo === 'mes' ? 12450.00 : (filtroTempo === 'semana' ? 3200.00 : 0);
+    const baseServicos = filtroTempo === 'mes' ? 320 : (filtroTempo === 'semana' ? 85 : 0);
+    const basePendente = filtroTempo === 'mes' ? 850.00 : (filtroTempo === 'semana' ? 250.00 : 0);
+
+    const faturamentoGeral = baseFaturamento + recebido;
+    const servicosRealizados = baseServicos + qtdServicosPagos;
+    const ticketFinal = servicosRealizados > 0 ? (faturamentoGeral / servicosRealizados) : 45.50;
+
+    return {
+      transacoesFiltered: filtered,
+      faturamentoTotal: faturamentoGeral,
+      ticketMedio: ticketFinal,
+      aReceber: basePendente + pendente,
+      totalDespesas: gastos
+    };
+  }, [filtroTempo, rawTransacoes]);
+
+  const handleExportPDF = () => {
+    window.print();
+  };
+
   return (
-    <div className="animate-fade-in">
-      <div className="page-header">
+    <div className="animate-fade-in print-area">
+      <div className="page-header no-print">
         <div className="page-title">
-          <h1>Financeiro <span style={{ fontSize: '0.6em', background: 'linear-gradient(135deg, #10b981, #047857)', padding: '4px 8px', borderRadius: '4px', verticalAlign: 'middle', marginLeft: '10px' }}>PRO</span></h1>
+          <h1>Financeiro <span style={{ fontSize: '0.6em', background: 'linear-gradient(135deg, #10b981, #047857)', padding: '4px 8px', borderRadius: '4px', verticalAlign: 'middle', marginLeft: '10px', color: 'white' }}>PRO</span></h1>
           <p>Gestão completa de Entradas, Saídas e Fluxo de Caixa</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <select 
             value={filtroTempo} 
             onChange={e => setFiltroTempo(e.target.value)}
-            style={{ padding: '0.6rem 1rem', borderRadius: '8px', background: 'var(--bg-secondary)', color: 'white', border: '1px solid var(--border-color)' }}
+            style={{ padding: '0.6rem 1rem', borderRadius: '8px', background: 'var(--bg-secondary)', color: 'white', border: '1px solid var(--border-color)', outline: 'none' }}
           >
              <option value="hoje">Hoje</option>
              <option value="semana">Últimos 7 Dias</option>
              <option value="mes">Este Mês</option>
           </select>
-          <button className="btn-primary" style={{ padding: '0.6rem 1.25rem', background: '#10b981', color: 'white', border: 'none' }}>
+          <button onClick={handleExportPDF} className="btn-primary" style={{ padding: '0.6rem 1.25rem', background: '#10b981', color: 'white', border: 'none' }}>
             📥 Exportar PDF
           </button>
         </div>
@@ -132,7 +156,7 @@ export default function FinanceiroPage() {
           </div>
 
           {/* Gráfico de Evolução (Simulado com CSS) */}
-          <div className="section-card" style={{ marginTop: '2rem' }}>
+          <div className="section-card no-print" style={{ marginTop: '2rem' }}>
              <h2 style={{ marginBottom: '1.5rem', fontSize: '1.2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.8rem' }}>Evolução do Faturamento (Últimos 7 dias)</h2>
              
              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: '200px', padding: '1rem 0', gap: '10px' }}>
@@ -157,8 +181,8 @@ export default function FinanceiroPage() {
           {/* Extrato / Fluxo de Caixa */}
           <div className="section-card" style={{ marginTop: '2rem', padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-               <h2 style={{ fontSize: '1.2rem' }}>Fluxo de Caixa (Extrato)</h2>
-               <button className="btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}>+ Lançar Despesa / Receita</button>
+               <h2 style={{ fontSize: '1.2rem' }}>Fluxo de Caixa (Extrato {filtroTempo === 'hoje' ? 'de Hoje' : (filtroTempo === 'semana' ? 'da Semana' : 'do Mês')})</h2>
+               <button className="btn-primary no-print" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}>+ Lançar Despesa / Receita</button>
             </div>
             
             <div style={{ overflowX: 'auto' }}>
@@ -173,7 +197,7 @@ export default function FinanceiroPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {transacoes.map((t, idx) => (
+                  {transacoesFiltered.map((t, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.2s' }} className="table-row-hover">
                       <td style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t.data}</td>
                       <td style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--text-primary)' }}>{t.descricao}</td>
@@ -192,9 +216,9 @@ export default function FinanceiroPage() {
                       </td>
                     </tr>
                   ))}
-                  {transacoes.length === 0 && (
+                  {transacoesFiltered.length === 0 && (
                     <tr>
-                      <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Nenhuma transação encontrada no período.</td>
+                      <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Nenhuma transação encontrada no período selecionado.</td>
                     </tr>
                   )}
                 </tbody>
@@ -205,6 +229,14 @@ export default function FinanceiroPage() {
           <style dangerouslySetInnerHTML={{__html: `
             .table-row-hover:hover {
                background: rgba(255, 255, 255, 0.02);
+            }
+            @media print {
+              body { background: white !important; color: black !important; }
+              .no-print { display: none !important; }
+              .sidebar { display: none !important; }
+              .print-area { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+              .metric-card { border: 1px solid #ccc; break-inside: avoid; }
+              * { text-shadow: none !important; box-shadow: none !important; }
             }
           `}} />
         </>

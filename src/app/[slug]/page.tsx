@@ -136,20 +136,78 @@ export default function BookingPage() {
     loadBarbearia();
   }, [slug]);
 
-  // Generators for UI
+  // --- Schedule Generation Logic ---
+  const defaultHorarios = {
+    segunda: { ativo: false, inicio: "09:00", fim: "18:00" },
+    terca: { ativo: true, inicio: "09:00", fim: "18:00" },
+    quarta: { ativo: true, inicio: "09:00", fim: "18:00" },
+    quinta: { ativo: true, inicio: "09:00", fim: "18:00" },
+    sexta: { ativo: true, inicio: "09:00", fim: "18:00" },
+    sabado: { ativo: true, inicio: "09:00", fim: "15:00" },
+    domingo: { ativo: false, inicio: "09:00", fim: "12:00" }
+  };
+
+  const getWeekDayName = (date: Date) => {
+    const days = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+    return days[date.getDay()];
+  };
+
+  const parseTime = (timeStr: string) => {
+    const [h, m] = timeStr.split(':').map(Number);
+    return h * 60 + m; // minutes from midnight
+  };
+
+  const formatTime = (minutes: number) => {
+    const h = Math.floor(minutes / 60).toString().padStart(2, '0');
+    const m = (minutes % 60).toString().padStart(2, '0');
+    return `${h}:${m}`;
+  };
+
   const generateDates = () => {
     const dates = [];
     const today = new Date();
-    for (let i = 0; i < 7; i++) {
+    // Use selectedBarbeiro.horarios_trabalho se existir, senao default
+    // @ts-ignore
+    const horarios = selectedBarbeiro?.horarios_trabalho || defaultHorarios;
+
+    for (let i = 0; i < 21; i++) { // look ahead to find enough open days
         const d = new Date();
         d.setDate(today.getDate() + i);
-        dates.push(d);
+        const dayStr = getWeekDayName(d);
+        if (horarios[dayStr]?.ativo) {
+            dates.push(d);
+        }
     }
-    return dates;
+    return dates.slice(0, 7); // Display 7 available upcoming days
   };
 
   const generateTimes = () => {
-    return ["09:00", "10:00", "11:00", "13:30", "14:30", "16:00", "17:00", "18:00"];
+    if (!selectedDate) return [];
+    // @ts-ignore
+    const horarios = selectedBarbeiro?.horarios_trabalho || defaultHorarios;
+    const dayStr = getWeekDayName(selectedDate);
+    const config = horarios[dayStr];
+    
+    if (!config || !config.ativo) return [];
+
+    const times = [];
+    let current = parseTime(config.inicio); 
+    const fim = parseTime(config.fim); 
+    const step = 30; // 30 minutes typical interval
+    const duration = selectedService?.duracao_minutos || 30;
+
+    // Simulate existing bookings randomly hiding some slots (optional MVP flair)
+    // We will just generate all valid slots between start and end.
+    while (current + duration <= fim) {
+       // Skip almoço para demo
+       if (current >= 720 && current < 780) { // 12h - 13h
+         current = 780;
+         continue;
+       }
+       times.push(formatTime(current));
+       current += step;
+    }
+    return times;
   };
 
   const handleBooking = async (e: React.FormEvent) => {

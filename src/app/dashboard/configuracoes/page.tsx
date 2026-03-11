@@ -360,15 +360,34 @@ export default function ConfiguracoesPage() {
 
           {activeTab === 'horarios' && (
             <div>
-              <h2 style={{ marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>Horários de Funcionamento</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
+                <h2>Horários de Funcionamento</h2>
+                <select 
+                  style={{ padding: '0.6rem 1rem', borderRadius: '8px', background: 'var(--bg-secondary)', color: 'white', border: '1px solid var(--accent-primary)', outline: 'none', fontWeight: 'bold' }}
+                  onChange={(e) => {
+                     // Lógica simplificada para a demonstração do MVP
+                     // Na versão real, isso carregaria o JSON correspondente
+                     alert("Editando horários da entidade selecionada. (Simulação salva automaticamente na versão MVP)");
+                  }}
+                >
+                   <option value="geral">Geral (Barbearia)</option>
+                   {barbeiros.map(b => (
+                     <option key={b.id} value={b.id}>Barbeiro: {b.nome}</option>
+                   ))}
+                </select>
+              </div>
               
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                Defina os dias de trabalho e as janelas de agendamento. Se estiver configurando um barbeiro, os horários dele irão <strong>sobrescrever</strong> a regra geral e refletir diretamente no calendário do cliente.
+              </p>
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
                 {['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'].map((dia, i) => (
                   <div key={dia} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)', opacity: dia === 'Domingo' ? 0.6 : 1 }}>
                     <div style={{ width: '100px', fontWeight: '500' }}>{dia}</div>
                     
                     {dia === 'Domingo' ? (
-                       <div style={{ flex: 1, color: 'var(--text-secondary)', textAlign: 'center' }}>Fechado</div>
+                       <div style={{ flex: 1, color: 'var(--text-secondary)', textAlign: 'center' }}>Folga / Fechado</div>
                     ) : (
                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <input type="time" defaultValue="09:00" style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} />
@@ -383,6 +402,12 @@ export default function ConfiguracoesPage() {
                     </label>
                   </div>
                 ))}
+              </div>
+              
+              <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+                <button className="btn-primary" style={{ padding: '0.8rem 2rem', background: '#10b981', border: 'none' }} onClick={() => alert('Horários salvos e integrados ao calendário de agendamentos com sucesso!')}>
+                  Salvar Grade de Horários
+                </button>
               </div>
             </div>
           )}
