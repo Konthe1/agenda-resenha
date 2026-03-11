@@ -13,11 +13,19 @@ type Barbearia = {
   cor_primaria: string | null;
 };
 
+type Barbeiro = {
+  id: string;
+  nome: string;
+  especialidade: string | null;
+  foto_url: string | null;
+};
+
 type Servico = {
   id: string;
   nome: string;
   descricao: string | null;
-  preco: number;
+  preco_base: number; // Para fallback antigo
+  precos_barbeiros?: Record<string, number>; // Novo modelo: preço por ID do barbeiro
   duracao_minutos: number;
 };
 
@@ -27,11 +35,13 @@ export default function BookingPage() {
   // Data States
   const [barbearia, setBarbearia] = useState<Barbearia | null>(null);
   const [servicos, setServicos] = useState<Servico[]>([]);
+  const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Booking Flow States
   const [step, setStep] = useState(1);
+  const [selectedBarbeiro, setSelectedBarbeiro] = useState<Barbeiro | null>(null);
   const [selectedService, setSelectedService] = useState<Servico | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -76,7 +86,29 @@ export default function BookingPage() {
         setBarbearia(activeBarbearia);
       }
 
-      // 2. Fetch Services
+      // 2. Fetch Barbeiros
+      let barbeirosData = null;
+      if (activeBarbearia.id !== '1') {
+        const { data } = await supabase
+          .from("barbeiros")
+          .select("*")
+          .eq("barbearia_id", activeBarbearia.id)
+          .eq("ativo", true);
+        barbeirosData = data;
+      }
+
+      if (barbeirosData && barbeirosData.length > 0) {
+        setBarbeiros(barbeirosData);
+      } else {
+        // Fallback for Demo without DB
+        setBarbeiros([
+          { id: '1', nome: 'Marcos (Chefe)', especialidade: 'Fade e Tesoura', foto_url: 'M' },
+          { id: '2', nome: 'Thiago', especialidade: 'Barba e Sobrancelha', foto_url: 'T' },
+          { id: '3', nome: 'Lucas', especialidade: 'Degradê e Freestyle', foto_url: 'L' },
+        ]);
+      }
+
+      // 3. Fetch Services
       let sData = null;
       if (activeBarbearia.id !== '1') {
         const { data } = await supabase
@@ -92,9 +124,9 @@ export default function BookingPage() {
       } else {
         // Fallback for Demo without DB
         setServicos([
-          { id: '1', nome: 'Corte Degradê na Régua', descricao: 'Máquina + Tesoura', preco: 45, duracao_minutos: 45 },
-          { id: '2', nome: 'Barba Terapia', descricao: 'Toalha quente e massagem', preco: 35, duracao_minutos: 30 },
-          { id: '3', nome: 'Combo Completo', descricao: 'Corte + Barba + Sobrancelha', preco: 90, duracao_minutos: 80 },
+          { id: '1', nome: 'Corte Degradê na Régua', descricao: 'Máquina, gilete e finalização', preco_base: 45, precos_barbeiros: { '1': 45, '2': 40, '3': 35 }, duracao_minutos: 45 },
+          { id: '2', nome: 'Barba Terapia Completa', descricao: 'Toalha quente e massagem', preco_base: 35, precos_barbeiros: { '1': 35, '2': 35, '3': 30 }, duracao_minutos: 30 },
+          { id: '3', nome: 'Combo Completo VIP', descricao: 'Corte + Barba + Sobrancelha', preco_base: 90, precos_barbeiros: { '1': 90, '2': 80, '3': 75 }, duracao_minutos: 80 },
         ]);
       }
 
@@ -122,7 +154,7 @@ export default function BookingPage() {
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!barbearia || !selectedService || !selectedDate || !selectedTime) return;
+    if (!barbearia || !selectedService || !selectedDate || !selectedTime || !selectedBarbeiro) return;
 
     setIsSubmitting(true);
     
@@ -166,45 +198,29 @@ export default function BookingPage() {
 
         const dtFim = new Date(dtInicio.getTime() + selectedService.duracao_minutos * 60000);
 
-        // 1.5 Fetch any active barbeiro so we don't violate foreign key
-        let activeBarbeiroId = 'mock-barbeiro-id';
-        
-        if (barbearia.id !== '1') {
-          const { data: barbeiroArray } = await supabase
-            .from('barbeiros')
-            .select('id')
-            .eq('barbearia_id', barbearia.id)
-            .limit(1);
-
-          activeBarbeiroId = barbeiroArray?.[0]?.id;
-          
-          if (!activeBarbeiroId) {
-             setError("A barbearia não possui profissionais cadastrados ainda.");
-             setIsSubmitting(false);
-             return;
-          }
-        }
+        // Preço dinâmico para salvar no banco
+        const valorReal = selectedService.precos_barbeiros?.[selectedBarbeiro.id] || selectedService.preco_base;
 
         // 2. Create Appointment
         if (barbearia.id !== '1') {
            await supabase.from('agendamentos').insert({
              barbearia_id: barbearia.id,
              cliente_id: clientId,
-             barbeiro_id: activeBarbeiroId,
+             barbeiro_id: selectedBarbeiro.id,
              servico_id: selectedService.id,
              data_hora_inicio: dtInicio.toISOString(),
              data_hora_fim: dtFim.toISOString(),
-             valor_total: selectedService.preco
+             valor_total: valorReal
            });
         }
       }
 
       // Concluido com sucesso
-      setStep(4);
+      setStep(5);
     } catch (err) {
       console.error("Booking error:", err);
-      // Fallback pra finalizar a UI mesmo que o BD dê erro na foreign key do barbeiro
-      setStep(4); 
+      // Fallback pra finalizar a UI mesmo que o BD dê erro na demo
+      setStep(5); 
     } finally {
       setIsSubmitting(false);
     }
@@ -232,7 +248,7 @@ export default function BookingPage() {
     <div className="booking-container">
       <div className="booking-card animate-fade-in" style={{ '--accent-primary': barbearia.cor_primaria || '#F97316' } as React.CSSProperties}>
         
-        {step !== 4 && (
+        {step !== 5 && (
           <div className="barbershop-header">
             {barbearia.logo_url ? (
               <img src={barbearia.logo_url} alt={barbearia.nome} className="barbershop-logo" />
@@ -244,32 +260,34 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* STEP 1: SERVICES */}
+        {/* STEP 1: BARBER */}
         {step === 1 && (
           <div className="booking-step slide-in-bottom">
-            <h2 className="step-title">
-              <span className="step-number">1</span> Escolha o Serviço
+            <h2 className="step-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+               <span><span className="step-number">1</span> Escolha o Profissional</span>
             </h2>
-            <div className="service-list">
-              {servicos.map((svc) => (
+            <div className="service-list" style={{ marginTop: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
+              {barbeiros.map((barbeiro) => (
                 <div 
-                  key={svc.id}
-                  className={`service-item ${selectedService?.id === svc.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedService(svc)}
+                  key={barbeiro.id}
+                  className={`service-item ${selectedBarbeiro?.id === barbeiro.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedBarbeiro(barbeiro)}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '1.5rem', gap: '0.8rem', justifyContent: 'center' }}
                 >
-                  <div className="service-info">
-                    <h3>{svc.nome}</h3>
-                    <p>{svc.descricao || `${svc.duracao_minutos} min`}</p>
+                  <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-primary) 0%, #ea580c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.8rem', color: 'white' }}>
+                    {barbeiro.foto_url || barbeiro.nome.charAt(0)}
                   </div>
-                  <div className="service-price">
-                    R$ {Number(svc.preco).toFixed(2).replace('.', ',')}
+                  <div>
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '0.2rem' }}>{barbeiro.nome}</h3>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{barbeiro.especialidade}</p>
                   </div>
                 </div>
               ))}
             </div>
             <button 
               className="btn-confirm" 
-              disabled={!selectedService}
+              style={{ marginTop: '1.5rem' }}
+              disabled={!selectedBarbeiro}
               onClick={() => setStep(2)}
             >
               Continuar ✨
@@ -277,14 +295,57 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* STEP 2: DATE & TIME */}
+        {/* STEP 2: SERVICES */}
         {step === 2 && (
           <div className="booking-step slide-in-bottom">
             <h2 className="step-title">
-              <span className="step-number">2</span> Data e Horário
+              <span className="step-number">2</span> Escolha o Serviço
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.9rem' }}>Os valores exibidos são cobrados pelo profissional <strong>{selectedBarbeiro?.nome}</strong></p>
+            <div className="service-list">
+              {servicos.map((svc) => {
+                 const precoReal = (selectedBarbeiro && svc.precos_barbeiros) ? (svc.precos_barbeiros[selectedBarbeiro.id] ?? svc.preco_base) : svc.preco_base;
+                 return (
+                  <div 
+                    key={svc.id}
+                    className={`service-item ${selectedService?.id === svc.id ? 'selected' : ''}`}
+                    onClick={() => setSelectedService(svc)}
+                  >
+                    <div className="service-info">
+                      <h3>{svc.nome}</h3>
+                      <p>{svc.descricao || `${svc.duracao_minutos} min`}</p>
+                    </div>
+                    <div className="service-price">
+                      R$ {Number(precoReal).toFixed(2).replace('.', ',')}
+                    </div>
+                  </div>
+                 )
+              })}
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
+              <button className="btn-confirm" style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', flex: '1' }} onClick={() => setStep(1)}>
+                Voltar
+              </button>
+              <button 
+                className="btn-confirm" 
+                style={{ flex: '2' }}
+                disabled={!selectedService}
+                onClick={() => setStep(3)}
+              >
+                Continuar ✨
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: DATE & TIME */}
+        {step === 3 && (
+          <div className="booking-step slide-in-bottom">
+            <h2 className="step-title">
+              <span className="step-number">3</span> Data e Horário
             </h2>
             
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Dias disponíveis</p>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Dias disponíveis de {selectedBarbeiro?.nome}</p>
             <div className="calendar-grid">
               {generateDates().map((date, i) => (
                 <button 
@@ -300,7 +361,7 @@ export default function BookingPage() {
 
             {selectedDate && (
               <>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Horários livres</p>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem', fontSize: '0.9rem', marginTop: '1.5rem' }}>Horários livres do profissional</p>
                 <div className="time-grid">
                   {generateTimes().map((time, i) => (
                     <button 
@@ -315,15 +376,15 @@ export default function BookingPage() {
               </>
             )}
 
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button className="btn-confirm" style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', flex: '1' }} onClick={() => setStep(1)}>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
+              <button className="btn-confirm" style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', flex: '1' }} onClick={() => setStep(2)}>
                 Voltar
               </button>
               <button 
                 className="btn-confirm" 
                 style={{ flex: '2' }}
                 disabled={!selectedDate || !selectedTime}
-                onClick={() => setStep(3)}
+                onClick={() => setStep(4)}
               >
                 Confirmar Horário
               </button>
@@ -331,15 +392,24 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* STEP 3: CLIENT INFO */}
-        {step === 3 && (
+        {/* STEP 4: CLIENT INFO */}
+        {step === 4 && (
           <div className="booking-step slide-in-bottom">
             <h2 className="step-title">
-              <span className="step-number">3</span> Seus Dados
+              <span className="step-number">4</span> Seus Dados
             </h2>
             
-            <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--bg-primary)', borderRadius: '0.5rem', fontSize: '0.9rem' }}>
-              <strong>Resumo:</strong> {selectedService?.nome} <br />
+            <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--bg-primary)', borderRadius: '0.5rem', fontSize: '0.9rem', border: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.8rem', paddingBottom: '0.8rem', borderBottom: '1px solid var(--border-color)' }}>
+                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-primary) 0%, #ea580c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.1rem', color: 'white' }}>
+                    {selectedBarbeiro?.foto_url || selectedBarbeiro?.nome.charAt(0)}
+                 </div>
+                 <div>
+                   <strong style={{ display: 'block' }}>{selectedBarbeiro?.nome}</strong>
+                   <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Profissional Escolhido</span>
+                 </div>
+              </div>
+              <strong>Serviço:</strong> {selectedService?.nome} <br />
               <strong>Quando:</strong> {selectedDate?.toLocaleDateString('pt-BR')} às {selectedTime}
             </div>
 
@@ -366,7 +436,7 @@ export default function BookingPage() {
               </div>
 
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                <button type="button" className="btn-confirm" style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', flex: '1' }} onClick={() => setStep(2)}>
+                <button type="button" className="btn-confirm" style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', flex: '1' }} onClick={() => setStep(3)}>
                   Voltar
                 </button>
                 <button 
@@ -382,8 +452,8 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* STEP 4: SUCCESS */}
-        {step === 4 && (
+        {/* STEP 5: SUCCESS */}
+        {step === 5 && (
           <div className="success-state slide-in-bottom">
             <div className="success-icon">🎉</div>
             <h2 style={{ marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Agendamento Confirmado!</h2>

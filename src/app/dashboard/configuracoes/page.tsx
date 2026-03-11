@@ -8,6 +8,24 @@ export default function ConfiguracoesPage() {
   const [isFetchingQrCode, setIsFetchingQrCode] = useState(false);
   const [qrCodeMessage, setQrCodeMessage] = useState("");
 
+  const [barbeiros, setBarbeiros] = useState([
+    { id: 1, nome: "Marcos (Chefe)", especialidade: "Fade e Tesoura", foto: "M" },
+    { id: 2, nome: "Thiago", especialidade: "Barba e Sobrancelha", foto: "T" },
+    { id: 3, nome: "Lucas", especialidade: "Degradê e Freestyle", foto: "L" },
+  ]);
+
+  const [servicos, setServicos] = useState<{ id: number, nome: string, descricao: string, precos: Record<number, number> }[]>([
+    { id: 1, nome: "Corte Degradê na Régua", descricao: "Máquina, gilete e finalização com pomada • 45 min", precos: { 1: 45, 2: 40, 3: 35 } },
+    { id: 2, nome: "Barba Terapia Completa", descricao: "Toalha quente, ozônio e massagem facial • 30 min", precos: { 1: 35, 2: 35, 3: 30 } },
+    { id: 3, nome: "Combo VIP (Corte + Barba)", descricao: "Serviço completo VIP • 1h 20m", precos: { 1: 90, 2: 80, 3: 75 } }
+  ]);
+  const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
+
+  const limiteBarbeiros = 5;
+  const valorAdicionalPorBarbeiro = 50.00;
+  const assinandoAdicionais = barbeiros.length > limiteBarbeiros;
+  const custoExtraMensal = assinandoAdicionais ? (barbeiros.length - limiteBarbeiros) * valorAdicionalPorBarbeiro : 0;
+
   const handleGenerateQR = async () => {
     setIsFetchingQrCode(true);
     setQrCodeMessage("Aguarde, gerando código secreto...");
@@ -60,6 +78,12 @@ export default function ConfiguracoesPage() {
               ✂️ Serviços e Preços
             </button>
             <button 
+              onClick={() => setActiveTab("barbeiros")}
+              style={{ padding: '1rem 1.5rem', textAlign: 'left', background: activeTab === 'barbeiros' ? 'var(--bg-secondary)' : 'transparent', border: 'none', color: activeTab === 'barbeiros' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'barbeiros' ? '600' : '400', cursor: 'pointer', borderLeft: activeTab === 'barbeiros' ? '3px solid var(--accent-primary)' : '3px solid transparent' }}
+            >
+              🧔 Equipe e Barbeiros
+            </button>
+            <button 
               onClick={() => setActiveTab("horarios")}
               style={{ padding: '1rem 1.5rem', textAlign: 'left', background: activeTab === 'horarios' ? 'var(--bg-secondary)' : 'transparent', border: 'none', color: activeTab === 'horarios' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'horarios' ? '600' : '400', cursor: 'pointer', borderLeft: activeTab === 'horarios' ? '3px solid var(--accent-primary)' : '3px solid transparent' }}
             >
@@ -106,42 +130,180 @@ export default function ConfiguracoesPage() {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
                 <h2>Serviços e Preços</h2>
-                <button className="btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}>+ Novo Serviço</button>
+                <button 
+                  className="btn-primary" 
+                  style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}
+                  onClick={() => {
+                     const newId = Date.now();
+                     setServicos([{ id: newId, nome: "Novo Serviço", descricao: "Breve descrição • 30 min", precos: {} }, ...servicos]);
+                     setEditingServiceId(newId);
+                  }}
+                >+ Novo Serviço</button>
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                  <div>
-                     <h3 style={{ marginBottom: '0.25rem' }}>Corte Degradê na Régua</h3>
-                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Máquina, gilete e finalização com pomada • 45 min</p>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                     <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>R$ 45,00</span>
-                     <button className="btn-text" style={{ padding: '0.5rem' }}>✏️</button>
-                  </div>
-                </div>
+                {servicos.map(servico => (
+                  <div key={servico.id} style={{ display: 'flex', flexDirection: 'column', padding: '1.5rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: editingServiceId === servico.id ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)' }}>
+                    
+                    {/* Header do Serviço */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: editingServiceId === servico.id ? '1rem' : '0' }}>
+                      <div style={{ flex: 1 }}>
+                        {editingServiceId === servico.id ? (
+                          <>
+                            <input 
+                              type="text" 
+                              value={servico.nome}
+                              onChange={(e) => setServicos(servicos.map(s => s.id === servico.id ? { ...s, nome: e.target.value } : s))}
+                              style={{ width: '100%', maxWidth: '400px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '0.5rem', padding: '0.5rem', borderRadius: '4px' }}
+                            />
+                            <input 
+                              type="text" 
+                              value={servico.descricao}
+                              onChange={(e) => setServicos(servicos.map(s => s.id === servico.id ? { ...s, descricao: e.target.value } : s))}
+                              style={{ width: '100%', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.9rem', padding: '0.5rem', borderRadius: '4px' }}
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <h3 style={{ marginBottom: '0.25rem', fontSize: '1.2rem' }}>{servico.nome}</h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{servico.descricao}</p>
+                          </>
+                        )}
+                      </div>
+                      
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '1rem' }}>
+                        {editingServiceId === servico.id ? (
+                          <button className="btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }} onClick={() => setEditingServiceId(null)}>Salvar</button>
+                        ) : (
+                          <button className="btn-text" style={{ padding: '0.5rem' }} onClick={() => setEditingServiceId(servico.id)}>✏️ Editar</button>
+                        )}
+                        <button className="btn-text" style={{ padding: '0.5rem', color: 'var(--accent-primary)' }} onClick={() => setServicos(servicos.filter(s => s.id !== servico.id))}>🗑️</button>
+                      </div>
+                    </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                  <div>
-                     <h3 style={{ marginBottom: '0.25rem' }}>Barba Terapia Completa</h3>
-                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Toalha quente, ozônio e massagem facial • 30 min</p>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                     <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>R$ 35,00</span>
-                     <button className="btn-text" style={{ padding: '0.5rem' }}>✏️</button>
-                  </div>
-                </div>
+                    {/* Preços por Barbeiro (Mostrado apenas ao editar ou expandir mentalmente) */}
+                    {editingServiceId === servico.id && (
+                      <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px dashed var(--border-color)' }}>
+                         <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.8rem' }}>Preço cobrado por cada profissional:</h4>
+                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+                           {barbeiros.map(barbeiro => (
+                             <div key={barbeiro.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-primary)', padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                               <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold' }}>{barbeiro.foto}</div>
+                               <div style={{ flex: 1, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{barbeiro.nome.split(' ')[0]}</div>
+                               <div style={{ display: 'flex', alignItems: 'center' }}>
+                                 <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginRight: '4px' }}>R$</span>
+                                 <input 
+                                   type="number" 
+                                   value={servico.precos[barbeiro.id as keyof typeof servico.precos] || ''}
+                                   placeholder="0,00"
+                                   onChange={(e) => {
+                                      const obj = { ...servico.precos, [barbeiro.id]: Number(e.target.value) };
+                                      setServicos(servicos.map(s => s.id === servico.id ? { ...s, precos: obj } : s));
+                                   }}
+                                   style={{ width: '60px', padding: '0.25rem', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', color: 'white', textAlign: 'right' }}
+                                 />
+                               </div>
+                             </div>
+                           ))}
+                         </div>
+                      </div>
+                    )}
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                  <div>
-                     <h3 style={{ marginBottom: '0.25rem' }}>Combo VIP (Corte + Barba + Sobrancelha)</h3>
-                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Serviço completo VIP • 1h 20m</p>
+                    {/* Preço Base Resumo (Mostrado quando não está editando) */}
+                    {editingServiceId !== servico.id && (
+                      <div style={{ marginTop: '0.8rem', display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
+                        {barbeiros.map(barbeiro => {
+                           const preco = servico.precos[barbeiro.id as keyof typeof servico.precos];
+                           if (!preco) return null;
+                           return (
+                             <span key={barbeiro.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', padding: '0.2rem 0.6rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                               <span style={{ color: 'var(--text-secondary)' }}>{barbeiro.nome.split(' ')[0]}:</span>
+                               <span style={{ fontWeight: 'bold', color: 'var(--accent-primary)' }}>R$ {preco.toFixed(2).replace('.', ',')}</span>
+                             </span>
+                           );
+                        })}
+                      </div>
+                    )}
+
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                     <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--accent-primary)' }}>R$ 90,00</span>
-                     <button className="btn-text" style={{ padding: '0.5rem' }}>✏️</button>
-                  </div>
+                ))}
+                
+                {servicos.length === 0 && (
+                   <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+                     Nenhum serviço cadastrado.
+                   </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'barbeiros' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
+                <h2>Equipe e Barbeiros</h2>
+                <button 
+                  className="btn-primary" 
+                  style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}
+                  onClick={() => setBarbeiros([...barbeiros, { id: Date.now(), nome: "Novo Barbeiro", especialidade: "Sem Especialidade Definida", foto: "?" }]) }
+                >+ Novo Barbeiro</button>
+              </div>
+
+              <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px', border: '1px dashed var(--border-color)', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h4 style={{ color: 'var(--text-primary)', marginBottom: '0.25rem' }}>Regra do Plano PRO: 5 Barbeiros Inclusos</h4>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Profissionais adicionais: + R$ 50,00/mês por barbeiro.</p>
                 </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ display: 'block', fontSize: '1.2rem', fontWeight: 'bold', color: assinandoAdicionais ? 'var(--accent-primary)' : 'var(--text-primary)' }}>
+                    {barbeiros.length} / {limiteBarbeiros}
+                  </span>
+                  {assinandoAdicionais && (
+                    <span style={{ fontSize: '0.8rem', color: 'var(--accent-primary)' }}>Acréscimo: + R$ {custoExtraMensal.toFixed(2)}</span>
+                  )}
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {barbeiros.map(barbeiro => (
+                  <div key={barbeiro.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-primary) 0%, #ea580c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                        {barbeiro.foto}
+                      </div>
+                      <div>
+                        <input 
+                          type="text" 
+                          value={barbeiro.nome}
+                          onChange={(e) => setBarbeiros(barbeiros.map(b => b.id === barbeiro.id ? { ...b, nome: e.target.value, foto: e.target.value.charAt(0).toUpperCase() } : b))}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '0.2rem', width: '200px' }}
+                        />
+                        <div>
+                          <input 
+                            type="text" 
+                            value={barbeiro.especialidade}
+                            onChange={(e) => setBarbeiros(barbeiros.map(b => b.id === barbeiro.id ? { ...b, especialidade: e.target.value } : b))}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '0.85rem', width: '200px' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <button className="btn-text" style={{ padding: '0.5rem', color: 'var(--text-secondary)' }} title="Horários de Trabalho">⏰</button>
+                      <button 
+                        className="btn-text" 
+                        style={{ padding: '0.5rem', color: 'var(--accent-primary)' }} 
+                        title="Remover"
+                        onClick={() => setBarbeiros(barbeiros.filter(b => b.id !== barbeiro.id))}
+                      >🗑️</button>
+                    </div>
+                  </div>
+                ))}
+                
+                {barbeiros.length === 0 && (
+                   <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+                     Nenhum barbeiro cadastrado.
+                   </div>
+                )}
               </div>
             </div>
           )}
