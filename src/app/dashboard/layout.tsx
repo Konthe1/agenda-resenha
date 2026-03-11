@@ -15,6 +15,8 @@ type NewBookingAlert = {
   cliente_nome: string;
   telefone: string;
   servico_nome: string;
+  barbeiro_nome: string;
+  barbearia_nome: string;
   valor: number;
   data_hora_inicio: string;
 };
@@ -27,10 +29,12 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [newBooking, setNewBooking] = useState<NewBookingAlert | null>(null);
 
+  const [isProcessing, setIsProcessing] = useState(false);
+
   useEffect(() => {
-    // Escuta eventos de INSERT na tabela agendamentos
+    // Escuta eventos de INSERT na tabela agendamentos (Canal ÚNICO para evitar colisão com a agenda)
     const channel = supabase
-      .channel('schema-db-changes')
+      .channel('global-dashboard-notifications')
       .on(
         'postgres_changes',
         {
@@ -43,24 +47,19 @@ export default function DashboardLayout({
           
           const newAgendamento = payload.new;
           
-          // Buscar detalhes do cliente e do serviço para mostrar no popup
-          const { data: clienteData } = await supabase
-            .from('clientes')
-            .select('nome, telefone')
-            .eq('id', newAgendamento.cliente_id)
-            .single();
-            
-          const { data: servicoData } = await supabase
-            .from('servicos')
-            .select('nome')
-            .eq('id', newAgendamento.servico_id)
-            .single();
+          // Buscar detalhes completos (Cliente, Servico, Barbeiro, Barbearia)
+          const { data: clienteData } = await supabase.from('clientes').select('nome, telefone').eq('id', newAgendamento.cliente_id).single();
+          const { data: servicoData } = await supabase.from('servicos').select('nome').eq('id', newAgendamento.servico_id).single();
+          const { data: barbeiroData } = await supabase.from('barbeiros').select('nome').eq('id', newAgendamento.barbeiro_id).single();
+          const { data: barbeariaData } = await supabase.from('barbearias').select('nome').eq('id', newAgendamento.barbearia_id).single();
 
           const bookingData: NewBookingAlert = {
             id: newAgendamento.id,
             cliente_nome: clienteData?.nome || 'Cliente Novo',
             telefone: clienteData?.telefone || 'Sem número',
             servico_nome: servicoData?.nome || 'Serviço',
+            barbeiro_nome: barbeiroData?.nome || 'Profissional',
+            barbearia_nome: barbeariaData?.nome || 'Barbearia',
             valor: newAgendamento.valor_total,
             data_hora_inicio: newAgendamento.data_hora_inicio
           };
@@ -92,6 +91,64 @@ export default function DashboardLayout({
     };
   }, []);
 
+  const handleConfirmBooking = async () => {
+    if (!newBooking) return;
+    setIsProcessing(true);
+
+    try {
+      // 1. Atualizar banco para 'confirmado'
+      await supabase
+        .from('agendamentos')
+        .update({ status: 'confirmado' })
+        .eq('id', newBooking.id);
+
+      // 2. Disparar WhatsApp oficial pro cliente
+      const dtInicio = new Date(newBooking.data_hora_inicio);
+      const payloadWpp = {
+        telefone: newBooking.telefone,
+        nomeCliente: newBooking.cliente_nome.split(' ')[0],
+        dataHora: `${dtInicio.toLocaleDateString('pt-BR')} às ${dtInicio.toLocaleTimeString('pt-BR', { hour: '2-digit', minute:'2-digit' })}`,
+        servico: newBooking.servico_nome,
+        barbeiro: newBooking.barbeiro_nome,
+        barbeariaNome: newBooking.barbearia_nome
+      };
+
+      await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadWpp)
+      });
+
+      alert("Agendamento confirmado com sucesso! O cliente foi avisado via WhatsApp.");
+      setNewBooking(null);
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao confirmar agendamento.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRejectBooking = async () => {
+    if (!newBooking) return;
+    setIsProcessing(true);
+    
+    try {
+      // Rejeita (Cancele) o agendamento
+      await supabase
+        .from('agendamentos')
+        .update({ status: 'cancelado' })
+        .eq('id', newBooking.id);
+        
+      setNewBooking(null);
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao rejeitar agendamento.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className="dashboard-layout">
       {/* OVERLAY DE NOTIFICAÇÃO REALTIME (CHAMATIVO) */}
@@ -106,18 +163,30 @@ export default function DashboardLayout({
             <div style={{ background: 'var(--bg-primary)', padding: '1.5rem', borderRadius: '12px', textAlign: 'left', marginBottom: '2rem', border: '1px solid var(--border-color)' }}>
               <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: 'var(--text-muted)' }}>CLIENTE:</strong> <span style={{ fontSize: '1.2rem', color: 'white' }}>{newBooking.cliente_nome}</span></p>
               <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: 'var(--text-muted)' }}>WHATSAPP:</strong> <span style={{ color: 'white' }}>{newBooking.telefone}</span></p>
+              <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: 'var(--text-muted)' }}>PROFISSIONAL:</strong> <span style={{ color: 'white' }}>{newBooking.barbeiro_nome}</span></p>
               <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: 'var(--text-muted)' }}>SERVIÇO:</strong> <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>{newBooking.servico_nome}</span></p>
               <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: 'var(--text-muted)' }}>DATA/HORA:</strong> <span style={{ color: 'white' }}>{new Date(newBooking.data_hora_inicio).toLocaleString('pt-BR')}</span></p>
               <p style={{ marginBottom: '0' }}><strong style={{ color: 'var(--text-muted)' }}>VALOR:</strong> <span style={{ color: '#10B981', fontWeight: 'bold', fontSize: '1.2rem' }}>R$ {newBooking.valor.toFixed(2)}</span></p>
             </div>
 
-            <button 
-              className="btn-primary"
-              style={{ padding: '1rem 3rem', fontSize: '1.1rem', fontWeight: 'bold', width: '100%', borderRadius: '12px' }}
-              onClick={() => setNewBooking(null)}
-            >
-              Confirmar e Fechar
-            </button>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button 
+                className="btn-confirm"
+                style={{ flex: 1, backgroundColor: 'var(--bg-tertiary)', color: '#EF4444', fontWeight: 'bold', padding: '1rem', borderRadius: '12px' }}
+                onClick={handleRejectBooking}
+                disabled={isProcessing}
+              >
+                Rejeitar
+              </button>
+              <button 
+                className="btn-primary"
+                style={{ flex: 2, padding: '1rem', fontSize: '1.1rem', fontWeight: 'bold', borderRadius: '12px' }}
+                onClick={handleConfirmBooking}
+                disabled={isProcessing}
+              >
+                {isProcessing ? 'Processando...' : 'Confirmar e Avisar Cliente'}
+              </button>
+            </div>
           </div>
         </div>
       )}

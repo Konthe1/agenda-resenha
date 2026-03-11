@@ -259,29 +259,14 @@ export default function BookingPage() {
              servico_id: selectedService.id,
              data_hora_inicio: dtInicio.toISOString(),
              data_hora_fim: dtFim.toISOString(),
-             valor_total: valorReal
+             valor_total: valorReal,
+             status: 'solicitado' // Novo fluxo: barbearia precisa aprovar
            });
         }
-        // 3. Disparo Automático via WhatsApp Evolution API
-        const payloadWpp = {
-          telefone: clientPhone,
-          nomeCliente: clientName.split(' ')[0],
-          dataHora: `${dtInicio.toLocaleDateString('pt-BR')} às ${selectedTime}`,
-          servico: selectedService.nome,
-          barbeiro: selectedBarbeiro.nome,
-          barbeariaNome: barbearia.nome
-        };
+        
+        // 3. O disparo do WhatsApp foi movido para o Painel (após aprovação do barbeiro)
+        console.log("Agendamento solicitado. Aguardando aprovação da barbearia.");
 
-        try {
-          await fetch('/api/whatsapp/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payloadWpp)
-          });
-          console.log("Sucesso ao enviar WhatsApp ou Simular disparo.");
-        } catch(wppError) {
-          console.error("Erro ao chamar API de WhatsApp internamente.", wppError);
-        }
       }
 
       // Concluido com sucesso
@@ -533,17 +518,17 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* STEP 5: SUCCESS */}
+        {/* STEP 5: SUCCESS (SOLICITADO) */}
         {step === 5 && (
           <div className="success-state slide-in-bottom">
-            <div className="success-icon">🎉</div>
-            <h2 style={{ marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Agendamento Confirmado!</h2>
+            <div className="success-icon">⏳</div>
+            <h2 style={{ marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Agendamento Solicitado!</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.5' }}>
               Tudo certo, {clientName.split(' ')[0]}!<br/>
-              Te esperamos no dia <strong>{selectedDate?.toLocaleDateString('pt-BR')}</strong> às <strong>{selectedTime}</strong> para o seu {selectedService?.nome}.
+              A sua solicitação para o dia <strong>{selectedDate?.toLocaleDateString('pt-BR')}</strong> às <strong>{selectedTime}</strong> foi enviada para o profissional.
             </p>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              Enviamos um resumo pro seu WhatsApp.
+            <p style={{ color: 'var(--accent-primary)', fontSize: '0.95rem', fontWeight: 'bold' }}>
+              Em breve, você receberá a confirmação oficial no seu WhatsApp. Fique de olho!
             </p>
           </div>
         )}

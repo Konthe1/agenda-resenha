@@ -13,6 +13,7 @@ export default function AgendaPage() {
   const [selectedBarbeiroId, setSelectedBarbeiroId] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedAppointmentInfo, setSelectedAppointmentInfo] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // States for new appointment
@@ -59,7 +60,7 @@ export default function AgendaPage() {
 
         const { data } = await supabase
           .from('agendamentos')
-          .select(`id, data_hora_inicio, barbeiro_id, servicos(nome), clientes(nome), barbeiros(nome, foto_url)`)
+          .select(`id, status, valor_total, data_hora_inicio, barbeiro_id, servicos(nome), clientes(nome, telefone), barbeiros(nome, foto_url)`)
           .gte('data_hora_inicio', new Date(currentWeekStart).toISOString())
           // Simplificação: Pegando apenas próximos 7 dias
           .lte('data_hora_inicio', new Date(currentWeekStart.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString());
@@ -175,6 +176,52 @@ export default function AgendaPage() {
     }
   };
 
+  const handleConfirmExistingBooking = async () => {
+    if (!selectedAppointmentInfo) return;
+    setIsSubmitting(true);
+    try {
+      await supabase.from('agendamentos').update({ status: 'confirmado' }).eq('id', selectedAppointmentInfo.id);
+
+      const dtInicio = new Date(selectedAppointmentInfo.data_hora_inicio);
+      const payloadWpp = {
+        telefone: selectedAppointmentInfo.clientes?.telefone,
+        nomeCliente: selectedAppointmentInfo.clientes?.nome?.split(' ')[0],
+        dataHora: `${dtInicio.toLocaleDateString('pt-BR')} às ${dtInicio.toLocaleTimeString('pt-BR', { hour: '2-digit', minute:'2-digit' })}`,
+        servico: selectedAppointmentInfo.servicos?.nome,
+        barbeiro: selectedAppointmentInfo.barbeiros?.nome,
+        barbeariaNome: 'Sua Barbearia' // fallback simplificado
+      };
+
+      await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadWpp)
+      });
+
+      alert("Agendamento confirmado com sucesso!");
+      setSelectedAppointmentInfo(null);
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao confirmar agendamento.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRejectExistingBooking = async () => {
+    if (!selectedAppointmentInfo) return;
+    setIsSubmitting(true);
+    try {
+      await supabase.from('agendamentos').update({ status: 'cancelado' }).eq('id', selectedAppointmentInfo.id);
+      setSelectedAppointmentInfo(null);
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao rejeitar agendamento.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="animate-fade-in" style={{ height: 'calc(100vh - 40px)', display: 'flex', flexDirection: 'column' }}>
       {/* HEADER */}
@@ -240,14 +287,22 @@ export default function AgendaPage() {
                 return (
                   <div key={`${hour}-${dIdx}`} style={{ borderBottom: '1px solid var(--border-color)', borderLeft: '1px solid var(--border-color)', position: 'relative', cursor: 'pointer', transition: 'background 0.2s' }} 
                        className="calendar-slot"
-                       onClick={() => setIsModalOpen(true)}>
+                       onClick={() => {
+                         if (app) {
+                           setSelectedAppointmentInfo(app);
+                         } else {
+                           setNovaData(day.toISOString().split('T')[0]);
+                           setNovaHora(`${hour.toString().padStart(2, '0')}:00`);
+                           setIsModalOpen(true);
+                         }
+                       }}>
                     
                      {/* Elemento de Agendamento */}
                      {app && (
                         <div style={{
                           position: 'absolute', top: '2px', left: '2px', right: '2px', bottom: '2px',
-                          background: 'rgba(249, 115, 22, 0.15)',
-                          borderLeft: '4px solid var(--accent-primary)',
+                          background: app.status === 'solicitado' ? 'rgba(234, 179, 8, 0.15)' : 'rgba(249, 115, 22, 0.15)',
+                          borderLeft: app.status === 'solicitado' ? '4px solid #EAB308' : '4px solid var(--accent-primary)',
                           borderRadius: '4px', padding: '4px 8px', overflow: 'hidden', cursor: 'pointer',
                           display: 'flex', flexDirection: 'column', gap: '2px'
                         }}>
@@ -320,6 +375,58 @@ export default function AgendaPage() {
                     {isSubmitting ? 'Salvando...' : 'Salvar e Avisar Cliente'}
                  </button>
               </div>
+           </div>
+        </div>
+      )}
+
+      {/* MODAL DETALHES DO AGENDAMENTO (VIEW / APPROVE) */}
+      {selectedAppointmentInfo && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(4px)' }}>
+           <div className="section-card animate-fade-in" style={{ width: '450px', maxWidth: '90%', padding: '2rem', border: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                 <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                   {selectedAppointmentInfo.status === 'solicitado' ? '⏳ Agendamento Pendente' : '✅ Agendamento'}
+                 </h2>
+                 <button className="btn-icon" onClick={() => setSelectedAppointmentInfo(null)}>❌</button>
+              </div>
+              
+              <div style={{ background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
+                <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: 'var(--text-muted)' }}>CLIENTE:</strong> <span style={{ fontSize: '1.1rem', color: 'white' }}>{selectedAppointmentInfo.clientes?.nome}</span></p>
+                <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: 'var(--text-muted)' }}>WHATSAPP:</strong> <span style={{ color: 'white' }}>{selectedAppointmentInfo.clientes?.telefone || 'Não informado'}</span></p>
+                <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: 'var(--text-muted)' }}>PROFISSIONAL:</strong> <span style={{ color: 'white' }}>{selectedAppointmentInfo.barbeiros?.nome}</span></p>
+                <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: 'var(--text-muted)' }}>DATA/HORA:</strong> <span style={{ color: 'white' }}>{new Date(selectedAppointmentInfo.data_hora_inicio).toLocaleString('pt-BR')}</span></p>
+                <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: 'var(--text-muted)' }}>SERVIÇO:</strong> <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>{selectedAppointmentInfo.servicos?.nome}</span></p>
+                <p style={{ marginBottom: '0' }}><strong style={{ color: 'var(--text-muted)' }}>STATUS:</strong> <span style={{ color: selectedAppointmentInfo.status === 'solicitado' ? '#EAB308' : '#10B981', fontWeight: 'bold', textTransform: 'uppercase' }}>{selectedAppointmentInfo.status}</span></p>
+              </div>
+
+              {selectedAppointmentInfo.status === 'solicitado' ? (
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button 
+                    className="btn-confirm"
+                    style={{ flex: 1, backgroundColor: 'var(--bg-tertiary)', color: '#EF4444', fontWeight: 'bold', padding: '1rem', borderRadius: '12px' }}
+                    onClick={handleRejectExistingBooking}
+                    disabled={isSubmitting}
+                  >
+                    Rejeitar
+                  </button>
+                  <button 
+                    className="btn-primary"
+                    style={{ flex: 2, padding: '1rem', fontSize: '1rem', fontWeight: 'bold', borderRadius: '12px' }}
+                    onClick={handleConfirmExistingBooking}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Processando...' : 'Confirmar e Avisar Cliente'}
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  className="btn-primary"
+                  style={{ width: '100%', padding: '1rem', fontSize: '1rem', fontWeight: 'bold', borderRadius: '12px' }}
+                  onClick={() => setSelectedAppointmentInfo(null)}
+                >
+                  Fechar
+                </button>
+              )}
            </div>
         </div>
       )}
