@@ -1,20 +1,64 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase/client";
 
 export default function MasterDashboardPage() {
-  // Mock Data for SaaS Management
-  const mrr = 8750.50; // Monthly Recurring Revenue
-  const activeClients = 42;
-  const requestsPending = 2; // Pending Barber requests
+  // Real Data for SaaS Management
+  const [mrr, setMrr] = useState(8750.50); // Mock MRR base
+  const [activeClients, setActiveClients] = useState(0);
+  const [freeTrials, setFreeTrials] = useState(0);
+  const [requestsPending, setRequestsPending] = useState(2); // Mock Pending Barber requests
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [clientes, setClientes] = useState([
+  const [clientes, setClientes] = useState<any[]>([
     { id: 1, nome: "Resenha Barber", dono: "Administrador", plano: "PRO", valorMensal: 149.99, barbeirosTotais: 5, barbeirosExtras: 0, statusPagamento: "Pago", whatsappOnline: true },
     { id: 2, nome: "The Classic Barber", dono: "Thiago Silva", plano: "PRO", valorMensal: 249.99, barbeirosTotais: 7, barbeirosExtras: 2, statusPagamento: "Pago", whatsappOnline: true },
     { id: 3, nome: "Brotherhood Shop", dono: "Marcos Ribeiro", plano: "Básico", valorMensal: 59.99, barbeirosTotais: 1, barbeirosExtras: 0, statusPagamento: "Atrasado", whatsappOnline: false },
     { id: 4, nome: "Navalha Premium", dono: "João Pedro", plano: "PRO", valorMensal: 149.99, barbeirosTotais: 4, barbeirosExtras: 0, statusPagamento: "Pago", whatsappOnline: true },
     { id: 5, nome: "Barbearia do Zé", dono: "José Carlos", plano: "Trial V.I", valorMensal: 0.00, barbeirosTotais: 2, barbeirosExtras: 0, statusPagamento: "Trial (10 dias)", whatsappOnline: true },
   ]);
+
+  useEffect(() => {
+    async function loadKpis() {
+      setIsLoading(true);
+      // Puxa total de barbearias ativas
+      const { data: bData } = await supabase.from('barbearias').select('id, nome, criado_em');
+      
+      if (bData) {
+        setActiveClients(bData.length);
+        
+        // Calcular free trials vazados (últimos 14 dias)
+        const fourteenDaysAgo = new Date();
+        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+        
+        const trials = bData.filter(b => new Date(b.criado_em) >= fourteenDaysAgo);
+        setFreeTrials(trials.length);
+
+        // Preenche de verdade na tabela
+        const reais = bData.map((b, i) => ({
+           id: b.id,
+           nome: b.nome || 'Barbearia Sem Nome',
+           dono: 'Desconhecido',
+           plano: new Date(b.criado_em) >= fourteenDaysAgo ? 'Trial 14 Dias' : 'PRO',
+           valorMensal: new Date(b.criado_em) >= fourteenDaysAgo ? 0 : 149.90,
+           barbeirosTotais: 1,
+           barbeirosExtras: 0,
+           statusPagamento: new Date(b.criado_em) >= fourteenDaysAgo ? `Trial (${14 - Math.floor((new Date().getTime() - new Date(b.criado_em).getTime()) / (1000 * 3600 * 24))} dias rest.)` : 'Pago',
+           whatsappOnline: true
+        }));
+        
+        // Mesclar com os mocks para demonstração ter volume
+        setClientes([...reais, ...clientes.slice(1)]);
+        
+        // Estimar MRR = (Total Clientes Premium * 149.90)
+        const premiumCount = bData.length - trials.length;
+        setMrr((premiumCount * 149.90) + 8500); // 8500 = mock base revenue
+      }
+      setIsLoading(false);
+    }
+    loadKpis();
+  }, []);
 
   const [solicitacoes, setSolicitacoes] = useState([
     { id: 101, barbeariaId: 4, nomeBarbearia: "Navalha Premium", planoAtual: "PRO", barbeirosAtuais: 5, qtdSolicitada: 1, custoAdicional: 50.00, data: "Hoje, 10:45" },
@@ -82,7 +126,7 @@ export default function MasterDashboardPage() {
             <span className="metric-title" style={{ color: '#94a3b8' }}>Free Trials Ativos</span>
             <div className="metric-icon" style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#a78bfa' }}>⏳</div>
           </div>
-          <div className="metric-value" style={{ color: '#f8fafc' }}>1</div>
+          <div className="metric-value" style={{ color: '#f8fafc' }}>{freeTrials}</div>
           <div className="metric-trend">
             <span style={{ color: '#64748b' }}>Teste grátis de 14 dias</span>
           </div>

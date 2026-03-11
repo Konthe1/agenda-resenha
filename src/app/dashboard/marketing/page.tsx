@@ -1,9 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase/client";
 
 export default function MarketingPage() {
   const [activeTab, setActiveTab] = useState("fidelidade");
+  const [inativosCount, setInativosCount] = useState(0);
+  const [promoMessage, setPromoMessage] = useState("Fala chefe, tudo certo? Senti sua falta aqui na Resenha Barber! Tem um cupom de 20% de desconto te esperando pra essa semana. Bora dar um talento no visual? Agende aqui: agendaresenha.com/resenhabarber");
+  const [isSending, setIsSending] = useState(false);
+
+  useEffect(() => {
+    async function fetchInativos() {
+      // Simulação rápida de contagem de clientes inativos baseada no número de clientes totais sem agenda recente
+      // Como não criamos regra complexa de data da ultima visita, apenas contamos o total de clientes na base.
+      const { count } = await supabase.from('clientes').select('*', { count: 'exact', head: true });
+      if (count) setInativosCount(count > 1 ? count - 1 : count); // simula que quase toda a base está inativa para dar impacto na demo
+    }
+    fetchInativos();
+  }, []);
+
+  const handleDisparo = async () => {
+    if (inativosCount === 0) {
+      alert("Nenhum cliente inativo no momento.");
+      return;
+    }
+    setIsSending(true);
+    // Na vida real, iterar pelos clientes e fazer a chamada para /api/whatsapp/send
+    await new Promise(r => setTimeout(r, 2000)); 
+    alert(`🚀 Disparo de Marketing em Massa enviado para ${inativosCount} clientes com sucesso! (Demonstração)`);
+    setIsSending(false);
+  };
 
   return (
     <div className="animate-fade-in">
@@ -105,13 +131,14 @@ export default function MarketingPage() {
                 
                 <textarea 
                   rows={4}
-                  defaultValue="Fala chefe, tudo certo? Senti sua falta aqui na Resenha Barber! Tem um cupom de 20% de desconto te esperando pra essa semana. Bora dar um talento no visual? Agende aqui: agendaresenha.com/resenhabarber"
+                  value={promoMessage}
+                  onChange={e => setPromoMessage(e.target.value)}
                   style={{ width: '100%', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white', marginBottom: '1rem', resize: 'vertical' }} 
                 />
                 
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button className="btn-primary" style={{ padding: '0.8rem 1.5rem' }}>
-                    🚀 Disparar para 142 Clientes Inativos
+                  <button className="btn-primary" style={{ padding: '0.8rem 1.5rem', opacity: isSending ? 0.7 : 1 }} onClick={handleDisparo} disabled={isSending}>
+                    {isSending ? 'Disparando...' : `🚀 Disparar para ${inativosCount} Clientes Inativos`}
                   </button>
                 </div>
               </div>

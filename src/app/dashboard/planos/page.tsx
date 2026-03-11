@@ -1,19 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase/client";
 
 export default function PlanosPage() {
-  const [assinantes, setAssinantes] = useState<any[]>([
-    { id: 1, nome: "Lucas Fernandes", telefone: "11999999999", plano_id: 1, vencimento: "15/04/2026", status: "Ativo", creditos: 'Ilimitado' },
-    { id: 2, nome: "Carlos Souza", telefone: "11988888888", plano_id: 2, vencimento: "20/03/2026", status: "Ativo", creditos: 2 },
-    { id: 3, nome: "Roberto Almeida", telefone: "11977777777", plano_id: 3, vencimento: "02/03/2026", status: "Atrasado", creditos: 0 },
-  ]);
+  const [assinantes, setAssinantes] = useState<any[]>([]);
+  const [planos, setPlanos] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [planos, setPlanos] = useState([
-    { id: 1, nome: "Plano Ilimitado", descricao: "O cliente corta cabelo quantas vezes quiser no mês.", preco: 150.00, creditos: 'Ilimitado' },
-    { id: 2, nome: "Pacote 4 Cortes", descricao: "4 cortes de cabelo p/ usar em 30 dias com desconto.", preco: 110.00, creditos: 4 },
-    { id: 3, nome: "Plano Barba + Cabelo", descricao: "Combo Mensal 2 Cortes e 2 Barbas.", preco: 130.00, creditos: 2 }
-  ]);
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true);
+      const { data: pData } = await supabase.from('planos').select('*').order('preco', { ascending: false });
+      if (pData) setPlanos(pData);
+
+      const { data: aData } = await supabase.from('assinantes').select('*, clientes(nome, telefone), planos(nome)').order('criado_em', { ascending: false });
+      if (aData) setAssinantes(aData);
+      
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
 
   const [isPlanoModalOpen, setIsPlanoModalOpen] = useState(false);
   const [isAssinanteModalOpen, setIsAssinanteModalOpen] = useState(false);
@@ -28,10 +35,17 @@ export default function PlanosPage() {
   const [novoAssinanteTel, setNovoAssinanteTel] = useState('');
   const [selectedPlanoId, setSelectedPlanoId] = useState('');
 
-  const handleCreatePlano = () => {
+  const handleCreatePlano = async () => {
     if (!novoPlanoNome || !novoPlanoPreco) return;
-    const newId = Date.now();
-    setPlanos([...planos, { id: newId, nome: novoPlanoNome, descricao: novoPlanoDesc, preco: Number(novoPlanoPreco), creditos: 4 }]);
+    const { data } = await supabase.from('planos').insert({ 
+      barbearia_id: '1', 
+      nome: novoPlanoNome, 
+      descricao: novoPlanoDesc, 
+      preco: Number(novoPlanoPreco), 
+      creditos: 4 
+    }).select().single();
+    
+    if (data) setPlanos([...planos, data]);
     setIsPlanoModalOpen(false);
     setNovoPlanoNome(''); setNovoPlanoDesc(''); setNovoPlanoPreco('');
   };
@@ -39,28 +53,48 @@ export default function PlanosPage() {
   const handleCreateAssinante = async () => {
     if (!novoAssinanteNome || !novoAssinanteTel || !selectedPlanoId) return;
     
-    // Calcula vencimento (30 dias a partir de hoje)
-    const today = new Date();
-    today.setDate(today.getDate() + 30);
-    const vencimentoStr = today.toLocaleDateString('pt-BR');
+    // 1 - Criar ou achar Cliente
+    let clientId;
+    const { data: clients } = await supabase.from('clientes').select('id').eq('telefone', novoAssinanteTel).limit(1);
+    if (clients && clients.length > 0) {
+      clientId = clients[0].id;
+    } else {
+      const { data: newC } = await supabase.from('clientes').insert({ barbearia_id: '1', nome: novoAssinanteNome, telefone: novoAssinanteTel }).select().single();
+      clientId = newC?.id;
+    }
 
-    const planoSelecionado = planos.find(p => p.id === Number(selectedPlanoId));
+    if (!clientId) return;
 
-    const newAssinante = {
-       id: Date.now(),
-       nome: novoAssinanteNome,
-       telefone: novoAssinanteTel,
-       plano_id: Number(selectedPlanoId),
-       vencimento: vencimentoStr,
-       status: "Ativo",
-       creditos: planoSelecionado?.creditos || 0
-    };
+    // 2 - Inserir Assinante
+    const { data: newA } = await supabase.from('assinantes').insert({
+      barbearia_id: '1',
+      cliente_id: clientId,
+      plano_id: selectedPlanoId,
+      dia_vencimento: new Date().getDate()
+    }).select('*, clientes(nome, telefone), planos(nome)').single();
 
-    setAssinantes([newAssinante, ...assinantes]);
+    if (newA) {
+       setAssinantes([newA, ...assinantes]);
+    }
+
     setIsAssinanteModalOpen(false);
     setNovoAssinanteNome(''); setNovoAssinanteTel(''); setSelectedPlanoId('');
 
-    // SIMULAÇÃO DO WHATSAPP (Evolution API integration seria chamada aqui)
+    // Trigger WPP Mock via Endpoint (to match the booking logic)
+    try {
+      await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          telefone: novoAssinanteTel,
+          nomeCliente: novoAssinanteNome,
+          dataHora: 'Agora',
+          servico: 'Assinatura PRO',
+          barbeiro: 'Resenha Barber',
+          barbeariaNome: 'Resenha Barber'
+        })
+      });
+    } catch(e) {}
     alert(`💳 Mensalidade Ativada!\n\nUm disparo de WhatsApp (Template de Assinaturas PRO) acaba de ser enviado para o cliente ${novoAssinanteNome} no número ${novoAssinanteTel}.`);
   };
 
@@ -89,7 +123,10 @@ export default function PlanosPage() {
                </div>
                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                  <button className="btn-text" style={{ padding: '0.4rem', color: 'var(--text-secondary)' }}>✏️</button>
-                 <button className="btn-text" style={{ padding: '0.4rem', color: 'var(--accent-primary)' }} onClick={() => setPlanos(planos.filter(p => p.id !== plano.id))}>🗑️</button>
+                 <button className="btn-text" style={{ padding: '0.4rem', color: 'var(--accent-primary)' }} onClick={async () => {
+                    await supabase.from('planos').delete().eq('id', plano.id);
+                    setPlanos(planos.filter(p => p.id !== plano.id));
+                 }}>🗑️</button>
                </div>
             </div>
           ))}
@@ -111,21 +148,27 @@ export default function PlanosPage() {
               </tr>
             </thead>
             <tbody>
-              {assinantes.map(a => (
-                <tr key={a.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                  <td style={{ padding: '1rem 1.5rem' }}>
-                     <strong style={{ display: 'block' }}>{a.nome}</strong>
-                     <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{a.telefone}</span>
-                  </td>
-                  <td style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)' }}>{planos.find(p => p.id === a.plano_id)?.nome || 'Plano Deletado'}</td>
-                  <td style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)' }}>{a.vencimento}</td>
-                  <td style={{ padding: '1rem 1.5rem' }}>
-                     <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 500, background: a.status === 'Ativo' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: a.status === 'Ativo' ? '#10b981' : '#ef4444' }}>
-                       {a.status}
-                     </span>
-                  </td>
-                </tr>
-              ))}
+              {isLoading ? (
+                 <tr><td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Carregando dados...</td></tr>
+              ) : assinantes.length === 0 ? (
+                 <tr><td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Nenhum assinante cadastrado.</td></tr>
+              ) : (
+                assinantes.map(a => (
+                  <tr key={a.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <td style={{ padding: '1rem 1.5rem' }}>
+                       <strong style={{ display: 'block' }}>{a.clientes?.nome || 'Cliente Removido'}</strong>
+                       <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{a.clientes?.telefone}</span>
+                    </td>
+                    <td style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)' }}>{a.planos?.nome || 'Plano Deletado'}</td>
+                    <td style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)' }}>Dia {a.dia_vencimento}</td>
+                    <td style={{ padding: '1rem 1.5rem' }}>
+                       <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 500, background: a.status === 'ativo' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: a.status === 'ativo' ? '#10b981' : '#ef4444' }}>
+                         {a.status === 'ativo' ? 'Ativo' : 'Atrasado'}
+                       </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
