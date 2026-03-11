@@ -16,6 +16,16 @@ export default function ConfiguracoesPage() {
   const [servicos, setServicos] = useState<any[]>([]);
   const [editingServiceId, setEditingServiceId] = useState<any>(null);
 
+  // Modal States
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [newServiceData, setNewServiceData] = useState({ nome: '', descricao: '', preco_base: '', duracao_minutos: '30' });
+  
+  const [showBarberModal, setShowBarberModal] = useState(false);
+  const [newBarberData, setNewBarberData] = useState({ nome: '', especialidade: '' });
+  
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'barbeiro' | 'servico', id: string, nome: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
@@ -156,20 +166,7 @@ export default function ConfiguracoesPage() {
                 <button 
                   className="btn-primary" 
                   style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}
-                  onClick={async () => {
-                     // Get the first active barbearia or fallback to demo UUID
-                     const { data: bData } = await supabase.from('barbearias').select('id').limit(1).single();
-                     const activeBarbeariaId = bData?.id || '12345678-1234-1234-1234-123456789012';
-                     
-                     const { data, error } = await supabase.from('servicos').insert({ barbearia_id: activeBarbeariaId, nome: 'Novo Serviço', descricao: '', preco_base: 0, duracao_minutos: 30 }).select().single();
-                     if (data) {
-                       setServicos([{...data, precos_barbeiros: {}}, ...servicos]);
-                       setEditingServiceId(data.id);
-                     } else {
-                       console.error("Erro ao criar serviço", error);
-                       alert("Erro ao criar serviço no banco de dados. " + (error?.message || ""));
-                     }
-                  }}
+                  onClick={() => setShowServiceModal(true)}
                 >+ Novo Serviço</button>
               </div>
               
@@ -212,9 +209,8 @@ export default function ConfiguracoesPage() {
                         ) : (
                           <button className="btn-text" style={{ padding: '0.5rem' }} onClick={() => setEditingServiceId(servico.id)}>✏️ Editar</button>
                         )}
-                        <button className="btn-text" style={{ padding: '0.5rem', color: 'var(--accent-primary)' }} onClick={async () => {
-                          await supabase.from('servicos').delete().eq('id', servico.id);
-                          setServicos(servicos.filter(s => s.id !== servico.id));
+                        <button className="btn-text" style={{ padding: '0.5rem', color: 'var(--accent-primary)' }} onClick={() => {
+                          setDeleteConfirm({ type: 'servico', id: servico.id, nome: servico.nome });
                         }}>🗑️</button>
                       </div>
                     </div>
@@ -232,11 +228,11 @@ export default function ConfiguracoesPage() {
                                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginRight: '4px' }}>R$</span>
                                  <input 
                                    type="number" 
-                                   value={servico.precos[barbeiro.id as keyof typeof servico.precos] || ''}
+                                   value={(servico.precos_barbeiros || {})[barbeiro.id as keyof typeof servico.precos_barbeiros] || ''}
                                    placeholder="0,00"
                                    onChange={(e) => {
-                                      const obj = { ...servico.precos, [barbeiro.id]: Number(e.target.value) };
-                                      setServicos(servicos.map(s => s.id === servico.id ? { ...s, precos: obj } : s));
+                                      const obj = { ...(servico.precos_barbeiros || {}), [barbeiro.id]: Number(e.target.value) };
+                                      setServicos(servicos.map(s => s.id === servico.id ? { ...s, precos_barbeiros: obj } : s));
                                    }}
                                    style={{ width: '60px', padding: '0.25rem', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', color: 'white', textAlign: 'right' }}
                                  />
@@ -251,7 +247,7 @@ export default function ConfiguracoesPage() {
                     {editingServiceId !== servico.id && (
                       <div style={{ marginTop: '0.8rem', display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
                         {barbeiros.map(barbeiro => {
-                           const preco = servico.precos[barbeiro.id as keyof typeof servico.precos];
+                           const preco = (servico.precos_barbeiros || {})[barbeiro.id as keyof typeof servico.precos_barbeiros];
                            if (!preco) return null;
                            return (
                              <span key={barbeiro.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', padding: '0.2rem 0.6rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -283,24 +279,12 @@ export default function ConfiguracoesPage() {
                    <button 
                      className="btn-primary" 
                      style={{ padding: '0.4rem 1rem', fontSize: '0.9rem', background: (barbeiros.length >= limiteBarbeiros) ? 'transparent' : 'var(--accent-primary)', border: (barbeiros.length >= limiteBarbeiros) ? '1px dashed var(--accent-primary)' : 'none', color: (barbeiros.length >= limiteBarbeiros) ? 'var(--accent-primary)' : 'white' }}
-                     onClick={async () => {
+                     onClick={() => {
                         if (barbeiros.length >= limiteBarbeiros) {
                            alert('Sua solicitação de Barbeiro Adicional no valor de R$ 50,00/mês foi enviada para o administrador. Aguarde a aprovação para liberar o novo slot em sua agenda.');
                            return;
                         }
-                        
-                        // Obter barbearia correta ou ID fallback para demo
-                        const { data: bData } = await supabase.from('barbearias').select('id').limit(1).single();
-                        const activeBarbeariaId = bData?.id || '12345678-1234-1234-1234-123456789012';
-
-                        const foto = "N";
-                        const { data, error } = await supabase.from('barbeiros').insert({ barbearia_id: activeBarbeariaId, nome: 'Novo Barbeiro', especialidade: '...', foto_url: foto, ativo: true }).select().single();
-                        if (data) {
-                          setBarbeiros([...barbeiros, data]);
-                        } else {
-                          console.error("Erro ao criar barbeiro", error);
-                          alert("Erro ao criar barbeiro no banco de dados. " + (error?.message || ""));
-                        }
+                        setShowBarberModal(true);
                      }}
                    >
                      {(barbeiros.length >= limiteBarbeiros) ? '📝 Solicitar Adicional (+R$50)' : '+ Novo Barbeiro'}
@@ -357,9 +341,8 @@ export default function ConfiguracoesPage() {
                         className="btn-text" 
                         style={{ padding: '0.5rem', color: 'var(--accent-primary)' }} 
                         title="Remover"
-                        onClick={async () => {
-                           await supabase.from('barbeiros').delete().eq('id', barbeiro.id);
-                           setBarbeiros(barbeiros.filter(b => b.id !== barbeiro.id));
+                        onClick={() => {
+                           setDeleteConfirm({ type: 'barbeiro', id: barbeiro.id, nome: barbeiro.nome });
                         }}
                       >🗑️</button>
                     </div>
@@ -535,6 +518,173 @@ export default function ConfiguracoesPage() {
           )}
         </div>
       </div>
+
+      {/* MODAL: NOVO SERVIÇO */}
+      {showServiceModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-secondary)', padding: '2rem', borderRadius: '12px', width: '90%', maxWidth: '450px', border: '1px solid var(--border-color)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+            <h3 style={{ marginBottom: '1.5rem', color: 'var(--text-primary)' }}>✨ Novo Serviço</h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Nome do Serviço *</label>
+                <input type="text" value={newServiceData.nome} onChange={e => setNewServiceData({...newServiceData, nome: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} placeholder="Ex: Corte Degradê" />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Descrição Breve</label>
+                <input type="text" value={newServiceData.descricao} onChange={e => setNewServiceData({...newServiceData, descricao: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} placeholder="Ex: Corte na tesoura com fade e finalização" />
+              </div>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Preço Base (R$) *</label>
+                  <input type="number" step="0.01" value={newServiceData.preco_base} onChange={e => setNewServiceData({...newServiceData, preco_base: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} placeholder="35.00" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Duração (Min) *</label>
+                  <input type="number" value={newServiceData.duracao_minutos} onChange={e => setNewServiceData({...newServiceData, duracao_minutos: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} placeholder="30" />
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button className="btn-secondary" style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px' }} onClick={() => setShowServiceModal(false)}>Cancelar</button>
+              <button 
+                className="btn-primary" 
+                disabled={isSubmitting || !newServiceData.nome || !newServiceData.preco_base}
+                style={{ padding: '0.6rem 1.2rem', opacity: (isSubmitting || !newServiceData.nome || !newServiceData.preco_base) ? 0.5 : 1 }}
+                onClick={async () => {
+                   setIsSubmitting(true);
+                   const { data: bData } = await supabase.from('barbearias').select('id').limit(1).single();
+                   const activeBarbeariaId = bData?.id || '12345678-1234-1234-1234-123456789012';
+                   
+                   const { data, error } = await supabase.from('servicos').insert({ 
+                     barbearia_id: activeBarbeariaId, 
+                     nome: newServiceData.nome, 
+                     descricao: newServiceData.descricao, 
+                     preco_base: parseFloat(newServiceData.preco_base), 
+                     duracao_minutos: parseInt(newServiceData.duracao_minutos),
+                     precos_barbeiros: {}
+                   }).select().single();
+                   
+                   if (data) {
+                     setServicos([{...data}, ...servicos]);
+                     setShowServiceModal(false);
+                     setNewServiceData({ nome: '', descricao: '', preco_base: '', duracao_minutos: '30' });
+                     setEditingServiceId(data.id); // Opcional, para abrir os preços individuais
+                   } else {
+                     alert("Erro ao criar serviço: " + (error?.message || ""));
+                   }
+                   setIsSubmitting(false);
+                }}
+              >
+                {isSubmitting ? 'Salvando...' : 'Criar Serviço'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: NOVO BARBEIRO */}
+      {showBarberModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-secondary)', padding: '2rem', borderRadius: '12px', width: '90%', maxWidth: '400px', border: '1px solid var(--border-color)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+            <h3 style={{ marginBottom: '1.5rem', color: 'var(--text-primary)' }}>🧔 Cadastrar Barbeiro</h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Nome do Profissional *</label>
+                <input type="text" value={newBarberData.nome} onChange={e => setNewBarberData({...newBarberData, nome: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} placeholder="Ex: Lucas Silva" />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Especialidade Principal</label>
+                <input type="text" value={newBarberData.especialidade} onChange={e => setNewBarberData({...newBarberData, especialidade: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} placeholder="Ex: Fade e Barboterapia" />
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button className="btn-secondary" style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px' }} onClick={() => setShowBarberModal(false)}>Cancelar</button>
+              <button 
+                className="btn-primary" 
+                disabled={isSubmitting || !newBarberData.nome}
+                style={{ padding: '0.6rem 1.2rem', opacity: (isSubmitting || !newBarberData.nome) ? 0.5 : 1 }}
+                onClick={async () => {
+                   setIsSubmitting(true);
+                   const { data: bData } = await supabase.from('barbearias').select('id').limit(1).single();
+                   const activeBarbeariaId = bData?.id || '12345678-1234-1234-1234-123456789012';
+                   
+                   const foto = newBarberData.nome.charAt(0).toUpperCase();
+                   const { data, error } = await supabase.from('barbeiros').insert({ 
+                     barbearia_id: activeBarbeariaId, 
+                     nome: newBarberData.nome, 
+                     especialidade: newBarberData.especialidade, 
+                     foto_url: foto, 
+                     ativo: true 
+                   }).select().single();
+                   
+                   if (data) {
+                     setBarbeiros([...barbeiros, data]);
+                     setShowBarberModal(false);
+                     setNewBarberData({ nome: '', especialidade: '' });
+                   } else {
+                     alert("Erro ao criar barbeiro: " + (error?.message || ""));
+                   }
+                   setIsSubmitting(false);
+                }}
+              >
+                {isSubmitting ? 'Salvando...' : 'Salvar Barbeiro'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CONFIRMAÇÃO DE EXCLUSÃO */}
+      {deleteConfirm && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-secondary)', padding: '2rem', borderRadius: '12px', width: '90%', maxWidth: '400px', border: '1px solid var(--border-color)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', textAlign: 'center' }}>
+            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', margin: '0 auto 1.5rem' }}>
+              ⚠️
+            </div>
+            <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Tem certeza?</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.9rem' }}>
+              Deseja realmente excluir <strong>{deleteConfirm.nome}</strong>? Esta ação não poderá ser desfeita e afetará o histórico e agendamentos futuros.
+            </p>
+            
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button 
+                style={{ padding: '0.6rem 1.5rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }} 
+                onClick={() => setDeleteConfirm(null)}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="btn-primary"
+                disabled={isSubmitting}
+                style={{ padding: '0.6rem 1.5rem', background: '#ef4444', border: 'none', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', opacity: isSubmitting ? 0.6 : 1 }}
+                onClick={async () => {
+                   setIsSubmitting(true);
+                   try {
+                     if (deleteConfirm.type === 'barbeiro') {
+                       await supabase.from('barbeiros').delete().eq('id', deleteConfirm.id);
+                       setBarbeiros(barbeiros.filter(b => b.id !== deleteConfirm.id));
+                     } else {
+                       await supabase.from('servicos').delete().eq('id', deleteConfirm.id);
+                       setServicos(servicos.filter(s => s.id !== deleteConfirm.id));
+                     }
+                     setDeleteConfirm(null);
+                   } catch (e) {
+                     alert("Erro ao excluir. Tente novamente.");
+                   }
+                   setIsSubmitting(false);
+                }}
+              >
+                {isSubmitting ? 'Excluindo...' : 'Sim, Excluir'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
