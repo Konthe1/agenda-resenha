@@ -86,19 +86,14 @@ export default function BookingPage() {
         setBarbearia(activeBarbearia);
       }
 
-      // 2. Fetch Barbeiros
-      let barbeirosData = null;
       if (activeBarbearia.id !== '1') {
         const { data } = await supabase
           .from("barbeiros")
           .select("*")
           .eq("barbearia_id", activeBarbearia.id)
           .eq("ativo", true);
-        barbeirosData = data;
-      }
-
-      if (barbeirosData && barbeirosData.length > 0) {
-        setBarbeiros(barbeirosData);
+        
+        if (data) setBarbeiros(data);
       } else {
         // Fallback for Demo without DB
         setBarbeiros([
@@ -109,18 +104,14 @@ export default function BookingPage() {
       }
 
       // 3. Fetch Services
-      let sData = null;
       if (activeBarbearia.id !== '1') {
         const { data } = await supabase
           .from("servicos")
           .select("*")
           .eq("barbearia_id", activeBarbearia.id)
           .eq("ativo", true);
-        sData = data;
-      }
         
-      if (sData && sData.length > 0) {
-        setServicos(sData);
+        if (data) setServicos(data);
       } else {
         // Fallback for Demo without DB
         setServicos([
@@ -345,22 +336,28 @@ export default function BookingPage() {
                <span><span className="step-number">1</span> Escolha o Profissional</span>
             </h2>
             <div className="service-list" style={{ marginTop: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
-              {barbeiros.map((barbeiro) => (
-                <div 
-                  key={barbeiro.id}
-                  className={`service-item ${selectedBarbeiro?.id === barbeiro.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedBarbeiro(barbeiro)}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '1.5rem', gap: '0.8rem', justifyContent: 'center' }}
-                >
-                  <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-primary) 0%, #ea580c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.8rem', color: 'white' }}>
-                    {barbeiro.foto_url || barbeiro.nome.charAt(0)}
+              {barbeiros.length > 0 ? (
+                barbeiros.map((barbeiro) => (
+                  <div 
+                    key={barbeiro.id}
+                    className={`service-item ${selectedBarbeiro?.id === barbeiro.id ? 'selected' : ''}`}
+                    onClick={() => setSelectedBarbeiro(barbeiro)}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '1.5rem', gap: '0.8rem', justifyContent: 'center' }}
+                  >
+                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-primary) 0%, #ea580c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.8rem', color: 'white' }}>
+                      {barbeiro.foto_url || barbeiro.nome.charAt(0)}
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '1.1rem', marginBottom: '0.2rem' }}>{barbeiro.nome}</h3>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{barbeiro.especialidade}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 style={{ fontSize: '1.1rem', marginBottom: '0.2rem' }}>{barbeiro.nome}</h3>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{barbeiro.especialidade}</p>
-                  </div>
+                ))
+              ) : (
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px dashed var(--border-color)' }}>
+                  ⚠️ Nenhum profissional cadastrado para agendamentos nesta barbearia.
                 </div>
-              ))}
+              )}
             </div>
             <button 
               className="btn-confirm" 
@@ -381,24 +378,30 @@ export default function BookingPage() {
             </h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.9rem' }}>Os valores exibidos são cobrados pelo profissional <strong>{selectedBarbeiro?.nome}</strong></p>
             <div className="service-list">
-              {servicos.map((svc) => {
-                 const precoReal = (selectedBarbeiro && svc.precos_barbeiros) ? (svc.precos_barbeiros[selectedBarbeiro.id] ?? svc.preco_base) : svc.preco_base;
-                 return (
-                  <div 
-                    key={svc.id}
-                    className={`service-item ${selectedService?.id === svc.id ? 'selected' : ''}`}
-                    onClick={() => setSelectedService(svc)}
-                  >
-                    <div className="service-info">
-                      <h3>{svc.nome}</h3>
-                      <p>{svc.descricao || `${svc.duracao_minutos} min`}</p>
+              {servicos.length > 0 ? (
+                servicos.map((svc) => {
+                   const precoReal = (selectedBarbeiro && svc.precos_barbeiros) ? (svc.precos_barbeiros[selectedBarbeiro.id] ?? svc.preco_base) : svc.preco_base;
+                   return (
+                    <div 
+                      key={svc.id}
+                      className={`service-item ${selectedService?.id === svc.id ? 'selected' : ''}`}
+                      onClick={() => setSelectedService(svc)}
+                    >
+                      <div className="service-info">
+                        <h3>{svc.nome}</h3>
+                        <p>{svc.descricao || `${svc.duracao_minutos} min`}</p>
+                      </div>
+                      <div className="service-price">
+                        R$ {Number(precoReal).toFixed(2).replace('.', ',')}
+                      </div>
                     </div>
-                    <div className="service-price">
-                      R$ {Number(precoReal).toFixed(2).replace('.', ',')}
-                    </div>
-                  </div>
-                 )
-              })}
+                   )
+                })
+              ) : (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px dashed var(--border-color)' }}>
+                  ⚠️ Nenhum serviço cadastrado nesta barbearia.
+                </div>
+              )}
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
               <button className="btn-confirm" style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', flex: '1' }} onClick={() => setStep(1)}>
