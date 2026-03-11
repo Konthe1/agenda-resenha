@@ -5,16 +5,49 @@ import { supabase } from "@/lib/supabase/client";
 
 export default function FinanceiroPage() {
   const [filtroTempo, setFiltroTempo] = useState("mes"); // hoje, semana, mes
+  const [filtroBarbeiro, setFiltroBarbeiro] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
 
   // Raw Data
   const [rawTransacoes, setRawTransacoes] = useState<any[]>([]);
+  const [barbeiros, setBarbeiros] = useState<any[]>([]);
+
+  // Carregar barbeiros para o filtro
+  useEffect(() => {
+    async function loadBarbeiros() {
+      const { data: barbearias } = await supabase.from('barbearias').select('id').limit(1);
+      const activeBarbeariaId = barbearias?.[0]?.id || '1';
+      
+      if (activeBarbeariaId !== '1') {
+        const { data } = await supabase.from('barbeiros').select('id, nome').eq('barbearia_id', activeBarbeariaId).eq('ativo', true);
+        if (data) setBarbeiros(data);
+      } else {
+        setBarbeiros([
+          { id: '1', nome: 'Marcos (Chefe)' },
+          { id: '2', nome: 'Thiago' },
+          { id: '3', nome: 'Lucas' },
+        ]);
+      }
+    }
+    loadBarbeiros();
+  }, []);
 
   useEffect(() => {
     async function loadFinanceiro() {
       setIsLoading(true);
       
-      const { data: agData } = await supabase.from('agendamentos').select('*, servicos(nome)').order('data_hora_inicio', { ascending: false });
+      let query = supabase.from('agendamentos').select('*, servicos(nome), barbeiros(nome)');
+      
+      if (filtroBarbeiro !== 'all') {
+        query = query.eq('barbeiro_id', filtroBarbeiro);
+      }
+      
+      // Filtramos globalmente para nao trazer mil anos de dados de cara
+      const nowFilter = new Date();
+      nowFilter.setDate(nowFilter.getDate() - 40); // Traz ultimos 40 dias do banco pra bater com filtro de mes/semana
+      query = query.gte('data_hora_inicio', nowFilter.toISOString()).order('data_hora_inicio', { ascending: false });
+
+      const { data: agData } = await query;
       
       if (agData) {
         const historicoReal = agData.map(a => ({
@@ -23,27 +56,31 @@ export default function FinanceiroPage() {
           rawDate: new Date(a.data_hora_inicio),
           tipo: 'Entrada',
           categoria: 'Serviço',
-          descricao: a.servicos?.nome || 'Serviço de Barbearia',
+          descricao: `${a.servicos?.nome || 'Serviço'} - Prof: ${a.barbeiros?.nome || 'Sem Categoria'}`,
           valor: Number(a.valor_total),
-          status: a.status === 'concluido' ? 'Pago' : (a.status === 'cancelado' ? 'Cancelado' : 'Pendente')
+          status: a.status === 'concluido' || a.status === 'confirmado' ? 'Pago' : (a.status === 'cancelado' ? 'Cancelado' : 'Pendente')
         }));
 
-        const now = new Date();
-        const mocksExtras = [
-          { id: 'm1', data: now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), rawDate: new Date(), tipo: 'Entrada', categoria: 'Produto', descricao: 'Venda: Pomada Matte', valor: 45.00, status: 'Pago' },
-          { id: 'm2', data: new Date(now.getTime() - 86400000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), rawDate: new Date(now.getTime() - 86400000), tipo: 'Saída', categoria: 'Despesa', descricao: 'Conta de Luz', valor: -250.00, status: 'Pago' },
-          { id: 'm3', data: new Date(now.getTime() - 2 * 86400000).toLocaleDateString('pt-BR'), rawDate: new Date(now.getTime() - 2 * 86400000), tipo: 'Entrada', categoria: 'Serviço', descricao: 'Corte + Barba', valor: 70.00, status: 'Pago' },
-          { id: 'm4', data: new Date(now.getTime() - 5 * 86400000).toLocaleDateString('pt-BR'), rawDate: new Date(now.getTime() - 5 * 86400000), tipo: 'Saída', categoria: 'Fornecedor', descricao: 'Compra de Lâminas', valor: -120.00, status: 'Pago' },
-        ];
+        let todasTransacoes = historicoReal;
 
-        let todasTransacoes = [...historicoReal, ...mocksExtras].sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
+        if (filtroBarbeiro === 'all') {
+          // Só adiciona os mocks globais e despesas se não estiver filtrando um barbeiro específico
+          const now = new Date();
+          const mocksExtras = [
+            { id: 'm1', data: now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), rawDate: new Date(), tipo: 'Entrada', categoria: 'Produto', descricao: 'Venda: Pomada Matte', valor: 45.00, status: 'Pago' },
+            { id: 'm2', data: new Date(now.getTime() - 86400000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), rawDate: new Date(now.getTime() - 86400000), tipo: 'Saída', categoria: 'Despesa', descricao: 'Conta de Luz', valor: -250.00, status: 'Pago' },
+          ];
+          todasTransacoes = [...historicoReal, ...mocksExtras];
+        }
+
+        todasTransacoes = todasTransacoes.sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
         setRawTransacoes(todasTransacoes);
       }
 
       setIsLoading(false);
     }
     loadFinanceiro();
-  }, []);
+  }, [filtroBarbeiro]);
 
   const { transacoesFiltered, faturamentoTotal, ticketMedio, aReceber, totalDespesas } = useMemo(() => {
     const now = new Date();
@@ -107,13 +144,23 @@ export default function FinanceiroPage() {
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <select 
+            value={filtroBarbeiro} 
+            onChange={e => setFiltroBarbeiro(e.target.value)}
+            style={{ padding: '0.6rem 1rem', borderRadius: '8px', background: 'var(--bg-secondary)', color: 'white', border: '1px solid var(--border-color)', outline: 'none' }}
+          >
+             <option value="all">👨‍💼 Todos os Barbeiros</option>
+             {barbeiros.map(b => (
+                <option key={b.id} value={b.id}>{b.nome}</option>
+             ))}
+          </select>
+          <select 
             value={filtroTempo} 
             onChange={e => setFiltroTempo(e.target.value)}
             style={{ padding: '0.6rem 1rem', borderRadius: '8px', background: 'var(--bg-secondary)', color: 'white', border: '1px solid var(--border-color)', outline: 'none' }}
           >
-             <option value="hoje">Hoje</option>
-             <option value="semana">Últimos 7 Dias</option>
-             <option value="mes">Este Mês</option>
+             <option value="hoje">📅 Hoje</option>
+             <option value="semana">📅 Últimos 7 Dias</option>
+             <option value="mes">📅 Este Mês</option>
           </select>
           <button onClick={handleExportPDF} className="btn-primary" style={{ padding: '0.6rem 1.25rem', background: '#10b981', color: 'white', border: 'none' }}>
             📥 Exportar PDF

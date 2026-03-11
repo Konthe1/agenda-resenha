@@ -45,6 +45,7 @@ export default function BookingPage() {
   const [selectedService, setSelectedService] = useState<Servico | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [bookedTimes, setBookedTimes] = useState<string[]>([]);
   
   // Client Form
   const [clientName, setClientName] = useState("");
@@ -127,6 +128,54 @@ export default function BookingPage() {
     loadBarbearia();
   }, [slug]);
 
+  // Fetch booked times for the selected date and barber
+  useEffect(() => {
+    async function loadBookings() {
+      if (!selectedDate || !selectedBarbeiro || !barbearia || barbearia.id === '1') {
+        setBookedTimes([]);
+        return;
+      }
+      
+      const startOfDay = new Date(selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .select('data_hora_inicio, servicos(duracao_minutos)')
+        .eq('barbearia_id', barbearia.id)
+        .eq('barbeiro_id', selectedBarbeiro.id)
+        .in('status', ['confirmado', 'solicitado']) // Ocupam a agenda
+        .gte('data_hora_inicio', startOfDay.toISOString())
+        .lte('data_hora_inicio', endOfDay.toISOString());
+
+      if (data && !error) {
+        // Bloquear todos os intervalos afetados
+        const blocked: string[] = [];
+        data.forEach(app => {
+           const d = new Date(app.data_hora_inicio);
+           let m = d.getHours() * 60 + d.getMinutes();
+           // @ts-ignore
+           const duration = app.servicos?.duracao_minutos || 30;
+           const fim = m + duration;
+           
+           // Bloqueia em intervalos de 30 min para garantir que qualquer slot que colida com isso suma
+           while(m < fim) {
+             blocked.push(formatTime(m));
+             m += 30; // Considerando granularidade de 30min da nossa agenda
+           }
+        });
+        setBookedTimes(blocked);
+      } else {
+        setBookedTimes([]);
+      }
+    }
+    
+    loadBookings();
+  }, [selectedDate, selectedBarbeiro, barbearia]);
+
   // --- Schedule Generation Logic ---
   const defaultHorarios = {
     segunda: { ativo: false, inicio: "09:00", fim: "18:00" },
@@ -187,15 +236,30 @@ export default function BookingPage() {
     const step = 30; // 30 minutes typical interval
     const duration = selectedService?.duracao_minutos || 30;
 
-    // Simulate existing bookings randomly hiding some slots (optional MVP flair)
-    // We will just generate all valid slots between start and end.
     while (current + duration <= fim) {
        // Skip almoço para demo
        if (current >= 720 && current < 780) { // 12h - 13h
          current = 780;
          continue;
        }
-       times.push(formatTime(current));
+       
+       const timeStr = formatTime(current);
+
+       // Verifica se esse slot (ou parte da sua duracao) não bate com algum ja agendado
+       let isBlocked = false;
+       let checkMins = current;
+       while (checkMins < current + duration) {
+          if (bookedTimes.includes(formatTime(checkMins))) {
+              isBlocked = true;
+              break;
+          }
+          checkMins += step;
+       }
+
+       if (!isBlocked) {
+         times.push(timeStr);
+       }
+       
        current += step;
     }
     return times;
