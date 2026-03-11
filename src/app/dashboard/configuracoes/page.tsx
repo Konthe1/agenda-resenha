@@ -157,16 +157,17 @@ export default function ConfiguracoesPage() {
                   className="btn-primary" 
                   style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}
                   onClick={async () => {
-                     const { data: { session } } = await supabase.auth.getSession();
-                     if (!session) return;
-                     const userId = session.user.id;
+                     // Get the first active barbearia or fallback to demo UUID
+                     const { data: bData } = await supabase.from('barbearias').select('id').limit(1).single();
+                     const activeBarbeariaId = bData?.id || '12345678-1234-1234-1234-123456789012';
                      
-                     const { data, error } = await supabase.from('servicos').insert({ barbearia_id: userId, nome: 'Novo Serviço', descricao: '', preco_base: 0, duracao_minutos: 30 }).select().single();
+                     const { data, error } = await supabase.from('servicos').insert({ barbearia_id: activeBarbeariaId, nome: 'Novo Serviço', descricao: '', preco_base: 0, duracao_minutos: 30 }).select().single();
                      if (data) {
                        setServicos([{...data, precos_barbeiros: {}}, ...servicos]);
                        setEditingServiceId(data.id);
                      } else {
                        console.error("Erro ao criar serviço", error);
+                       alert("Erro ao criar serviço no banco de dados. " + (error?.message || ""));
                      }
                   }}
                 >+ Novo Serviço</button>
@@ -287,13 +288,19 @@ export default function ConfiguracoesPage() {
                            alert('Sua solicitação de Barbeiro Adicional no valor de R$ 50,00/mês foi enviada para o administrador. Aguarde a aprovação para liberar o novo slot em sua agenda.');
                            return;
                         }
-                        const { data: { session } } = await supabase.auth.getSession();
-                        if (!session) return;
-                        const userId = session.user.id;
+                        
+                        // Obter barbearia correta ou ID fallback para demo
+                        const { data: bData } = await supabase.from('barbearias').select('id').limit(1).single();
+                        const activeBarbeariaId = bData?.id || '12345678-1234-1234-1234-123456789012';
 
                         const foto = "N";
-                        const { data } = await supabase.from('barbeiros').insert({ barbearia_id: userId, nome: 'Novo Barbeiro', especialidade: '...', foto_url: foto, ativo: true }).select().single();
-                        if (data) setBarbeiros([...barbeiros, data]);
+                        const { data, error } = await supabase.from('barbeiros').insert({ barbearia_id: activeBarbeariaId, nome: 'Novo Barbeiro', especialidade: '...', foto_url: foto, ativo: true }).select().single();
+                        if (data) {
+                          setBarbeiros([...barbeiros, data]);
+                        } else {
+                          console.error("Erro ao criar barbeiro", error);
+                          alert("Erro ao criar barbeiro no banco de dados. " + (error?.message || ""));
+                        }
                      }}
                    >
                      {(barbeiros.length >= limiteBarbeiros) ? '📝 Solicitar Adicional (+R$50)' : '+ Novo Barbeiro'}
