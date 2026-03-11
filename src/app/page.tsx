@@ -1,7 +1,11 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import "./page.css";
 
 export default function Home() {
+  const [isAnnual, setIsAnnual] = useState(true);
   return (
     <div className="landing-container">
       {/* Background Decor */}
@@ -130,12 +134,25 @@ export default function Home() {
           <h2>Planos Simples e Transparentes</h2>
           <p>Escolha o plano ideal para o tamanho do seu negócio. Cancele quando quiser.</p>
 
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '2rem', marginBottom: '3rem' }}>
+            <span style={{ fontWeight: !isAnnual ? 'bold' : 'normal', color: !isAnnual ? 'var(--text-primary)' : 'var(--text-secondary)', cursor: 'pointer' }} onClick={() => setIsAnnual(false)}>Mensal</span>
+            <div 
+              style={{ width: '60px', height: '32px', background: 'var(--accent-primary)', borderRadius: '30px', position: 'relative', cursor: 'pointer', transition: '0.3s' }}
+              onClick={() => setIsAnnual(!isAnnual)}
+            >
+              <div style={{ width: '24px', height: '24px', background: 'white', borderRadius: '50%', position: 'absolute', top: '4px', left: isAnnual ? '32px' : '4px', transition: '0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
+            </div>
+            <span style={{ fontWeight: isAnnual ? 'bold' : 'normal', color: isAnnual ? 'var(--text-primary)' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setIsAnnual(true)}>
+              Anual <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' }}>Economize até 44%</span>
+            </span>
+          </div>
+
           <div className="pricing-grid">
             <div className="pricing-card">
               <div className="pricing-header">
                 <h3>Básico (1 a 2 Barbeiros)</h3>
-                <div className="price"><span>R$</span>59<span>,99 /mês</span></div>
-                <div className="price-sub">Cobrado mensalmente</div>
+                <div className="price"><span>R$</span>{isAnnual ? '39' : '59'}<span>,99 /mês</span></div>
+                <div className="price-sub">{isAnnual ? 'Cobrado R$ 479,88 anualmente' : 'Cobrado mensalmente'}</div>
               </div>
               <ul className="pricing-features">
                 <li>
@@ -158,8 +175,8 @@ export default function Home() {
               <div className="popular-badge">Mais Escolhido</div>
               <div className="pricing-header">
                 <h3>Resenha Pro (Ilimitado)</h3>
-                <div className="price"><span>R$</span>149<span>,99 /mês</span></div>
-                <div className="price-sub">Para barbearias em crescimento</div>
+                <div className="price"><span>R$</span>{isAnnual ? '83' : '149'}<span>,{isAnnual ? '33' : '99'} /mês</span></div>
+                <div className="price-sub">{isAnnual ? 'Cobrado R$ 1.000,00 anualmente' : 'Para barbearias em crescimento'}</div>
               </div>
               <ul className="pricing-features">
                 <li>
@@ -184,11 +201,8 @@ export default function Home() {
                 </li>
               </ul>
               <Link href="/login" className="btn-primary" style={{ width: '100%', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.2rem', background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', border: 'none', boxShadow: '0 4px 14px 0 rgba(249, 115, 22, 0.39)', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>Assinar Plano Anual 🏆</span>
-                  <span style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 400 }}>Apenas R$ 83,33/mês (Economize 44%)</span>
-              </Link>
-              <Link href="/login" style={{ display: 'block', textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)', textDecoration: 'underline' }}>
-                  Ou assine contrato mensal por R$ 149,99
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{isAnnual ? 'Assinar Plano Anual 🏆' : 'Assinar Plano Pro Mensal'}</span>
+                  <span style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 400 }}>{isAnnual ? 'Apenas R$ 83,33/mês' : 'R$ 149,99/mês sem fidelidade'}</span>
               </Link>
             </div>
           </div>
