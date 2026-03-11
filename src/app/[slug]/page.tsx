@@ -213,6 +213,26 @@ export default function BookingPage() {
              valor_total: valorReal
            });
         }
+        // 3. Disparo Automático via WhatsApp Evolution API
+        const payloadWpp = {
+          telefone: clientPhone,
+          nomeCliente: clientName.split(' ')[0],
+          dataHora: `${dtInicio.toLocaleDateString('pt-BR')} às ${selectedTime}`,
+          servico: selectedService.nome,
+          barbeiro: selectedBarbeiro.nome,
+          barbeariaNome: barbearia.nome
+        };
+
+        try {
+          await fetch('/api/whatsapp/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payloadWpp)
+          });
+          console.log("Sucesso ao enviar WhatsApp ou Simular disparo.");
+        } catch(wppError) {
+          console.error("Erro ao chamar API de WhatsApp internamente.", wppError);
+        }
       }
 
       // Concluido com sucesso
