@@ -7,6 +7,7 @@ export default function ConfiguracoesPage() {
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
   const [isFetchingQrCode, setIsFetchingQrCode] = useState(false);
   const [qrCodeMessage, setQrCodeMessage] = useState("");
+  const [planoAtual, setPlanoAtual] = useState<"basico" | "pro">("pro"); // Simulação do plano ativo
 
   const [barbeiros, setBarbeiros] = useState([
     { id: 1, nome: "Marcos (Chefe)", especialidade: "Fade e Tesoura", foto: "M" },
@@ -241,23 +242,51 @@ export default function ConfiguracoesPage() {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
                 <h2>Equipe e Barbeiros</h2>
-                <button 
-                  className="btn-primary" 
-                  style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}
-                  onClick={() => setBarbeiros([...barbeiros, { id: Date.now(), nome: "Novo Barbeiro", especialidade: "Sem Especialidade Definida", foto: "?" }]) }
-                >+ Novo Barbeiro</button>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                   {/* Switch de simulação temporário para testes */}
+                   <select 
+                     value={planoAtual} 
+                     onChange={(e) => setPlanoAtual(e.target.value as "basico" | "pro")}
+                     style={{ padding: '0.4rem', borderRadius: '4px', background: 'var(--bg-secondary)', color: 'white', border: '1px solid var(--border-color)' }}
+                   >
+                     <option value="basico">Testar como: Plano Básico</option>
+                     <option value="pro">Testar como: Plano PRO</option>
+                   </select>
+
+                   <button 
+                     className="btn-primary" 
+                     style={{ padding: '0.4rem 1rem', fontSize: '0.9rem', background: (planoAtual === 'pro' && barbeiros.length >= limiteBarbeiros) ? 'transparent' : 'var(--accent-primary)', border: (planoAtual === 'pro' && barbeiros.length >= limiteBarbeiros) ? '1px dashed var(--accent-primary)' : 'none', color: (planoAtual === 'pro' && barbeiros.length >= limiteBarbeiros) ? 'var(--accent-primary)' : 'white' }}
+                     onClick={() => {
+                        if (planoAtual === 'basico' && barbeiros.length >= 1) {
+                           alert('Seu Plano Básico permite apenas 1 barbeiro exclusivo. Fale conosco para fazer um Upgrade para o PRO e adicionar mais membros à sua barbearia!');
+                           return;
+                        }
+                        if (planoAtual === 'pro' && barbeiros.length >= limiteBarbeiros) {
+                           alert('Sua solicitação de Barbeiro Adicional no valor de R$ 50,00/mês foi enviada para o administrador. Aguarde a aprovação para liberar o novo slot em sua agenda.');
+                           return;
+                        }
+                        setBarbeiros([...barbeiros, { id: Date.now(), nome: "Novo Barbeiro", especialidade: "Sem Especialidade Definida", foto: "?" }]);
+                     }}
+                   >
+                     {(planoAtual === 'pro' && barbeiros.length >= limiteBarbeiros) ? '📝 Solicitar Adicional (+R$50)' : '+ Novo Barbeiro'}
+                   </button>
+                </div>
               </div>
 
               <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px', border: '1px dashed var(--border-color)', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h4 style={{ color: 'var(--text-primary)', marginBottom: '0.25rem' }}>Regra do Plano PRO: 5 Barbeiros Inclusos</h4>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Profissionais adicionais: + R$ 50,00/mês por barbeiro.</p>
+                  <h4 style={{ color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                    {planoAtual === 'basico' ? 'Regra do Plano Básico: 1 Barbeiro Máximo' : 'Regra do Plano PRO: 5 Barbeiros Inclusos'}
+                  </h4>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                    {planoAtual === 'basico' ? 'Para adicionar mais profissionais, faça upgrade para o PRO.' : 'Profissionais adicionais mediante aprovação: + R$ 50,00/mês por barbeiro.'}
+                  </p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <span style={{ display: 'block', fontSize: '1.2rem', fontWeight: 'bold', color: assinandoAdicionais ? 'var(--accent-primary)' : 'var(--text-primary)' }}>
-                    {barbeiros.length} / {limiteBarbeiros}
+                    {barbeiros.length} / {planoAtual === 'basico' ? '1' : limiteBarbeiros.toString()}
                   </span>
-                  {assinandoAdicionais && (
+                  {assinandoAdicionais && planoAtual === 'pro' && (
                     <span style={{ fontSize: '0.8rem', color: 'var(--accent-primary)' }}>Acréscimo: + R$ {custoExtraMensal.toFixed(2)}</span>
                   )}
                 </div>

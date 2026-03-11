@@ -150,9 +150,9 @@ export default function Home() {
           <div className="pricing-grid">
             <div className="pricing-card">
               <div className="pricing-header">
-                <h3>Básico (1 a 2 Barbeiros)</h3>
+                <h3>Básico (1 Barbeiro Máximo)</h3>
                 <div className="price"><span>R$</span>{isAnnual ? '39' : '59'}<span>,99 /mês</span></div>
-                <div className="price-sub">{isAnnual ? 'Cobrado R$ 479,88 anualmente' : 'Cobrado mensalmente'}</div>
+                <div className="price-sub">{isAnnual ? 'Cobrado R$ 479,88 anualmente' : 'Cobrado mensalmente. Ideal para autônomos.'}</div>
               </div>
               <ul className="pricing-features">
                 <li>
@@ -174,9 +174,9 @@ export default function Home() {
             <div className="pricing-card popular">
               <div className="popular-badge">Mais Escolhido</div>
               <div className="pricing-header">
-                <h3>Resenha Pro (Ilimitado)</h3>
+                <h3>Resenha Pro (Até 5 Barbeiros)</h3>
                 <div className="price"><span>R$</span>{isAnnual ? '83' : '149'}<span>,{isAnnual ? '33' : '99'} /mês</span></div>
-                <div className="price-sub">{isAnnual ? 'Cobrado R$ 1.000,00 anualmente' : 'Para barbearias em crescimento'}</div>
+                <div className="price-sub">{isAnnual ? 'Cobrado R$ 1.000,00 anualmente' : 'Barbeiros extras por +R$50/mês cada'}</div>
               </div>
               <ul className="pricing-features">
                 <li>

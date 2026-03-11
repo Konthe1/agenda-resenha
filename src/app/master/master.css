@@ -1,0 +1,148 @@
+.master-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #0f172a; /* Darker blue-gray background for master admin */
+  color: #f8fafc;
+}
+
+/* Sidebar */
+.master-sidebar {
+  width: 280px;
+  background-color: #1e293b;
+  border-right: 1px solid #334155;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  position: fixed;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  overflow-y: auto;
+}
+
+.master-sidebar-header {
+  margin-bottom: 2.5rem;
+}
+
+.master-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-heading);
+  color: #f8fafc;
+}
+
+.master-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex-grow: 1;
+}
+
+.master-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  color: #cbd5e1;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.master-nav-item:hover {
+  background-color: #334155;
+  color: #f8fafc;
+}
+
+.master-nav-item.active {
+  background-color: rgba(139, 92, 246, 0.15); /* Purple tint */
+  color: #c4b5fd;
+}
+
+.master-sidebar-footer {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #334155;
+}
+
+/* Main Content */
+.master-content {
+  flex-grow: 1;
+  margin-left: 280px;
+  padding: 2rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Master Cards */
+.master-card {
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+
+.master-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.master-table th {
+  text-align: left;
+  padding: 1rem;
+  color: #94a3b8;
+  font-weight: 500;
+  border-bottom: 1px solid #334155;
+}
+
+.master-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #334155;
+  color: #f8fafc;
+}
+
+.master-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.master-badge.success { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+.master-badge.warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.master-badge.danger { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+.master-badge.info { background: rgba(56, 189, 248, 0.15); color: #7dd3fc; }
+
+.btn-master {
+  background-color: #8b5cf6;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-master:hover {
+  background-color: #7c3aed;
+}
+
+.btn-master-outline {
+  background-color: transparent;
+  color: #cbd5e1;
+  border: 1px solid #475569;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-master-outline:hover {
+  background-color: #334155;
+  color: #f8fafc;
+}
