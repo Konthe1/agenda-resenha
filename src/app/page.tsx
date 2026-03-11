@@ -37,10 +37,10 @@ export default function Home() {
         <section className="hero-section animate-fade-in">
           <div className="badge">🚀 O Novo Padrão para Barbearias</div>
           <h1 className="hero-title">
-            Zere os buracos na agenda com <span className="highlight">notificações automáticas!</span>
+            Profissionalize sua barbearia sem perder a <span className="highlight">essência da resenha!</span>
           </h1>
           <p className="hero-subtitle">
-            O único sistema SaaS focado 100% em barbearias modernas. Agendamento em 30 segundos, avisos via WhatsApp e zero burocracia para você focar no corte perfeito.
+            O único sistema inteligente focado no lucro do dono. Agendamentos 24h, notificações no WhatsApp e zero dor de cabeça para você focar no corte e nos amigos.
           </p>
           <div className="hero-actions">
             <Link href="/login" className="btn-primary">
