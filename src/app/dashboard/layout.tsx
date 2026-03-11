@@ -17,7 +17,7 @@ export default function DashboardLayout({
       <aside className="sidebar">
         <div className="sidebar-header">
           <div className="sidebar-brand">
-            <img src="/logo.png" alt="Logo" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'contain' }} />
+            <img src="/logo.png" alt="Logo" style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'contain' }} />
             <span>Resenha<span className="accent">Admin</span></span>
           </div>
         </div>

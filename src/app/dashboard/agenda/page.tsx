@@ -9,6 +9,8 @@ const HOURS = Array.from({ length: 12 }, (_, i) => i + 9); // 09:00 as 20:00
 
 export default function AgendaPage() {
   const [appointments, setAppointments] = useState<any[]>([]);
+  const [barbeiros, setBarbeiros] = useState<any[]>([]);
+  const [selectedBarbeiroId, setSelectedBarbeiroId] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -18,6 +20,7 @@ export default function AgendaPage() {
   const [novoClienteWpp, setNovoClienteWpp] = useState('');
   const [novaData, setNovaData] = useState('');
   const [novaHora, setNovaHora] = useState('10:00');
+  const [novoBarbeiroId, setNovoBarbeiroId] = useState('');
   
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const d = new Date();
@@ -31,9 +34,32 @@ export default function AgendaPage() {
     async function fetchAgenda() {
       setIsLoading(true);
       try {
+        const { data: barbearias } = await supabase.from('barbearias').select('id').limit(1);
+        const activeBarbeariaId = barbearias?.[0]?.id || '1';
+
+        // Fetch Barbeiros
+        let bData = null;
+        if (activeBarbeariaId !== '1') {
+           const { data } = await supabase.from('barbeiros').select('*').eq('barbearia_id', activeBarbeariaId).eq('ativo', true);
+           bData = data;
+        }
+        
+        if (bData && bData.length > 0) {
+           setBarbeiros(bData);
+           setNovoBarbeiroId(bData[0].id);
+        } else {
+           const mockBarbeiros = [
+             { id: '1', nome: 'Marcos (Chefe)', especialidade: 'Fade e Tesoura', foto_url: 'M' },
+             { id: '2', nome: 'Thiago', especialidade: 'Barba e Sobrancelha', foto_url: 'T' },
+             { id: '3', nome: 'Lucas', especialidade: 'Degradê e Freestyle', foto_url: 'L' },
+           ];
+           setBarbeiros(mockBarbeiros);
+           setNovoBarbeiroId(mockBarbeiros[0].id);
+        }
+
         const { data } = await supabase
           .from('agendamentos')
-          .select(`id, data_hora_inicio, servicos(nome), clientes(nome)`)
+          .select(`id, data_hora_inicio, barbeiro_id, servicos(nome), clientes(nome), barbeiros(nome, foto_url)`)
           .gte('data_hora_inicio', new Date(currentWeekStart).toISOString())
           // Simplificação: Pegando apenas próximos 7 dias
           .lte('data_hora_inicio', new Date(currentWeekStart.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString());
@@ -73,6 +99,7 @@ export default function AgendaPage() {
   // Verifica se há agendamento naquela hora
   const getAppointmentForSlot = (date: Date, hour: number) => {
     return appointments.find(app => {
+      if (selectedBarbeiroId !== "all" && app.barbeiro_id !== selectedBarbeiroId) return false;
       const appDate = new Date(app.data_hora_inicio);
       return appDate.getDate() === date.getDate() && 
              appDate.getMonth() === date.getMonth() && 
@@ -98,10 +125,7 @@ export default function AgendaPage() {
       const { data: servicos } = await supabase.from('servicos').select('id, preco').limit(1);
       const servicoObj = servicos?.[0];
 
-      const { data: barbeiros } = await supabase.from('barbeiros').select('id').limit(1);
-      const barbeiroId = barbeiros?.[0]?.id;
-
-      if (!barbeariaId || !servicoObj || !barbeiroId) {
+      if (!barbeariaId || !servicoObj || !novoBarbeiroId) {
         alert("Erro estrutural: Cadastre uma barbearia, um barbeiro e um serviço antes de agendar.");
         return;
       }
@@ -129,7 +153,7 @@ export default function AgendaPage() {
       const { error } = await supabase.from('agendamentos').insert({
          barbearia_id: barbeariaId,
          cliente_id: clienteId,
-         barbeiro_id: barbeiroId,
+         barbeiro_id: novoBarbeiroId,
          servico_id: servicoObj.id,
          data_hora_inicio: startDateTime.toISOString(),
          data_hora_fim: endDateTime.toISOString(),
@@ -160,6 +184,17 @@ export default function AgendaPage() {
           <p>Visão Semanal Interativa</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <select 
+            value={selectedBarbeiroId} 
+            onChange={e => setSelectedBarbeiroId(e.target.value)}
+            style={{ padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontWeight: '500', minWidth: '180px' }}
+          >
+             <option value="all">Filtro: Todos Barbeiros</option>
+             {barbeiros.map(b => (
+               <option key={b.id} value={b.id}>🧔 {b.nome}</option>
+             ))}
+          </select>
+
           <div style={{ display: 'flex', background: 'var(--bg-secondary)', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
             <button onClick={prevWeek} className="btn-text" style={{ padding: '0.5rem 1rem', borderRight: '1px solid var(--border-color)' }}>←</button>
             <span style={{ padding: '0.5rem 1rem', fontWeight: 500, whiteSpace: 'nowrap' }}>
@@ -207,22 +242,28 @@ export default function AgendaPage() {
                        className="calendar-slot"
                        onClick={() => setIsModalOpen(true)}>
                     
-                    {/* Elemento de Agendamento */}
-                    {app && (
-                       <div style={{
-                         position: 'absolute', top: '2px', left: '2px', right: '2px', bottom: '2px',
-                         background: 'rgba(249, 115, 22, 0.15)',
-                         borderLeft: '4px solid var(--accent-primary)',
-                         borderRadius: '4px', padding: '4px 8px', overflow: 'hidden', cursor: 'pointer'
-                       }}>
-                         <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--accent-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                            {app.clientes?.nome || 'Cliente'}
-                         </div>
-                         <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                            {app.servicos?.nome || 'Serviço'}
-                         </div>
-                       </div>
-                    )}
+                     {/* Elemento de Agendamento */}
+                     {app && (
+                        <div style={{
+                          position: 'absolute', top: '2px', left: '2px', right: '2px', bottom: '2px',
+                          background: 'rgba(249, 115, 22, 0.15)',
+                          borderLeft: '4px solid var(--accent-primary)',
+                          borderRadius: '4px', padding: '4px 8px', overflow: 'hidden', cursor: 'pointer',
+                          display: 'flex', flexDirection: 'column', gap: '2px'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                             <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--accent-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold' }}>
+                                {app.barbeiros?.foto_url || app.barbeiros?.nome?.charAt(0) || '?'}
+                             </div>
+                             <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--accent-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                                {app.clientes?.nome || 'Cliente'}
+                             </div>
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                             {app.servicos?.nome || 'Serviço'}
+                          </div>
+                        </div>
+                     )}
                   </div>
                 );
               })}
@@ -260,6 +301,19 @@ export default function AgendaPage() {
                       <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Hora</label>
                       <input type="time" value={novaHora} onChange={e => setNovaHora(e.target.value)} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white' }} />
                     </div>
+                 </div>
+
+                 <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Profissional (Barbeiro)</label>
+                    <select 
+                      value={novoBarbeiroId} 
+                      onChange={e => setNovoBarbeiroId(e.target.value)}
+                      style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white' }}
+                    >
+                       {barbeiros.map(b => (
+                         <option key={b.id} value={b.id}>{b.nome}</option>
+                       ))}
+                    </select>
                  </div>
 
                  <button className="btn-primary" disabled={isSubmitting} style={{ marginTop: '1rem', padding: '1rem', opacity: isSubmitting ? 0.7 : 1 }} onClick={handleCreateAppointment}>
