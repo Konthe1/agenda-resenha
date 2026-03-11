@@ -6,28 +6,47 @@ import { supabase } from "@/lib/supabase/client";
 export default function MarketingPage() {
   const [activeTab, setActiveTab] = useState("fidelidade");
   const [inativosCount, setInativosCount] = useState(0);
+  const [totalClientes, setTotalClientes] = useState(0);
   const [promoMessage, setPromoMessage] = useState("Fala chefe, tudo certo? Senti sua falta aqui na Resenha Barber! Tem um cupom de 20% de desconto te esperando pra essa semana. Bora dar um talento no visual? Agende aqui: agendaresenha.com/resenhabarber");
   const [isSending, setIsSending] = useState(false);
+  
+  // Advanced Filtros
+  const [filtroAlvo, setFiltroAlvo] = useState("inativos"); 
+  
+  // Mock Data for UI demonstration
+  const [ranking, setRanking] = useState([
+    { id: 1, nome: "João Silva", telefone: "11999999999", cortes: 8, pontos: 80, proxPremio: "2 cortes" },
+    { id: 2, nome: "Carlos Eduardo", telefone: "11988888888", cortes: 5, pontos: 50, proxPremio: "5 cortes" },
+    { id: 3, nome: "Marcos Lima", telefone: "11977777777", cortes: 3, pontos: 30, proxPremio: "7 cortes" }
+  ]);
+  
+  const [cashbacks, setCashbacks] = useState([
+    { id: 1, data: "10/03/2026", cliente: "João Silva", valorAplicado: 4.50, status: "Aguardando Resgate" },
+    { id: 2, data: "08/03/2026", cliente: "Pedro Alves", valorAplicado: 7.00, status: "Aguardando Resgate" },
+    { id: 3, data: "01/03/2026", cliente: "Carlos Eduardo", valorAplicado: 3.50, status: "Resgatado" }
+  ]);
 
   useEffect(() => {
-    async function fetchInativos() {
-      // Simulação rápida de contagem de clientes inativos baseada no número de clientes totais sem agenda recente
-      // Como não criamos regra complexa de data da ultima visita, apenas contamos o total de clientes na base.
+    async function fetchDados() {
       const { count } = await supabase.from('clientes').select('*', { count: 'exact', head: true });
-      if (count) setInativosCount(count > 1 ? count - 1 : count); // simula que quase toda a base está inativa para dar impacto na demo
+      if (count) {
+        setTotalClientes(count);
+        // Moca que 70% da base tá inativa há mais de 30 dias para a demo
+        setInativosCount(Math.floor(count * 0.7) || 1);
+      }
     }
-    fetchInativos();
+    fetchDados();
   }, []);
 
   const handleDisparo = async () => {
-    if (inativosCount === 0) {
-      alert("Nenhum cliente inativo no momento.");
+    let target = filtroAlvo === 'inativos' ? inativosCount : (filtroAlvo === 'todos' ? totalClientes : ranking.length);
+    if (target === 0) {
+      alert("Nenhum cliente nesse segmento.");
       return;
     }
     setIsSending(true);
-    // Na vida real, iterar pelos clientes e fazer a chamada para /api/whatsapp/send
     await new Promise(r => setTimeout(r, 2000)); 
-    alert(`🚀 Disparo de Marketing em Massa enviado para ${inativosCount} clientes com sucesso! (Demonstração)`);
+    alert(`🚀 Disparo de Marketing em Massa enviado para ${target} clientes com sucesso! (Demonstração)`);
     setIsSending(false);
   };
 
@@ -39,7 +58,7 @@ export default function MarketingPage() {
           <p>Retenha clientes e dispare promoções pelo WhatsApp</p>
         </div>
         <button className="btn-primary" style={{ padding: '0.6rem 1.25rem' }}>
-          Ativar Campanha
+          Configurações Avançadas
         </button>
       </div>
 
@@ -72,73 +91,192 @@ export default function MarketingPage() {
         <div className="main-panel">
           {activeTab === 'fidelidade' && (
             <div>
-              <h2 style={{ marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>Cartão Fidelidade Virtual</h2>
+              <h2 style={{ marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>Visão Geral de Fidelidade</h2>
               
-              <div className="section-card" style={{ background: 'var(--bg-secondary)' }}>
-                <h3>Regra do Cartão</h3>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>Defina quantos cortes o cliente precisa fazer para ganhar um prêmio.</p>
-                
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <input type="number" defaultValue={10} style={{ width: '80px', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} />
-                  <span>Cortes = </span>
-                  <select style={{ flex: 1, padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }}>
-                    <option>1 Corte Grátis</option>
-                    <option>1 Barba Grátis</option>
-                    <option>50% de Desconto no próximo serviço</option>
-                    <option>Cerveja Artesanal Grátis</option>
-                  </select>
+              <div className="metrics-grid" style={{ marginBottom: '2rem' }}>
+                <div className="metric-card" style={{ background: 'var(--bg-secondary)', borderLeft: '4px solid var(--accent-primary)' }}>
+                   <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Clientes no Programa</div>
+                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{totalClientes > 0 ? totalClientes : 124}</div>
                 </div>
+                <div className="metric-card" style={{ background: 'var(--bg-secondary)', borderLeft: '4px solid #10b981' }}>
+                   <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Cortes Faltando (Média)</div>
+                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>4.2</div>
+                </div>
+                <div className="metric-card" style={{ background: 'var(--bg-secondary)', borderLeft: '4px solid #f59e0b' }}>
+                   <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Prêmios Resgatados</div>
+                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>28</div>
+                </div>
+              </div>
 
-                <div style={{ padding: '15px', background: 'rgba(37, 211, 102, 0.1)', border: '1px solid #25D366', borderRadius: '8px', color: '#25D366' }}>
-                  📱 O cliente receberá uma mensagem no WhatsApp com o saldo atualizado a cada corte!
+              <div className="section-card" style={{ background: 'var(--bg-secondary)', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h3 style={{ fontSize: '1.1rem' }}>Regra Atual do Cartão</h3>
+                  <button className="btn-text" style={{ fontSize: '0.85rem' }}>✏️ Editar</button>
                 </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--bg-primary)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                   <div style={{ fontSize: '2rem' }}>✂️</div>
+                   <div>
+                     <strong style={{ display: 'block', fontSize: '1.1rem' }}>10 Cortes = 1 Corte Grátis</strong>
+                     <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Os pontos são creditados automaticamente após o cliente concluir o pagamento via PIX ou Link.</span>
+                   </div>
+                </div>
+              </div>
+
+              <div className="section-card" style={{ background: 'var(--bg-secondary)', padding: 0, overflow: 'hidden' }}>
+                <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-color)' }}>
+                   <h3 style={{ fontSize: '1.1rem' }}>Ranking dos Mais Fiéis 🏆</h3>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                      <th style={{ padding: '0.8rem 1.5rem', fontWeight: 600 }}>Posição</th>
+                      <th style={{ padding: '0.8rem 1.5rem', fontWeight: 600 }}>Cliente</th>
+                      <th style={{ padding: '0.8rem 1.5rem', fontWeight: 600 }}>Cortes Atuais</th>
+                      <th style={{ padding: '0.8rem 1.5rem', fontWeight: 600 }}>Próximo Prêmio Em</th>
+                      <th style={{ padding: '0.8rem 1.5rem', fontWeight: 600 }}>Acionar</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ranking.map((r, i) => (
+                      <tr key={r.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                         <td style={{ padding: '1rem 1.5rem' }}>
+                            {i === 0 ? '🥇 1º' : i === 1 ? '🥈 2º' : '🥉 3º'}
+                         </td>
+                         <td style={{ padding: '1rem 1.5rem', fontWeight: 'bold' }}>{r.nome} <span style={{display: 'block', fontSize: '0.75rem', fontWeight: 'normal', color: 'var(--text-secondary)'}}>{r.telefone}</span></td>
+                         <td style={{ padding: '1rem 1.5rem' }}>{r.cortes} / 10</td>
+                         <td style={{ padding: '1rem 1.5rem', color: 'var(--accent-primary)' }}>{r.proxPremio}</td>
+                         <td style={{ padding: '1rem 1.5rem' }}>
+                           <button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', background: '#25D366' }}>WhatsApp</button>
+                         </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
 
           {activeTab === 'cashback' && (
             <div>
-              <h2 style={{ marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>Cashback Automático</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
+                <h2>Carteira de Cashback Automático</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(16, 185, 129, 0.1)', padding: '0.4rem 1rem', borderRadius: '16px', border: '1px solid #10b981', color: '#10b981', fontWeight: 'bold' }}>
+                   Status: Ativo (Devolvendo 5%)
+                </div>
+              </div>
               
-              <div className="section-card" style={{ background: 'var(--bg-secondary)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <div>
-                    <h3>Ativar Cashback</h3>
-                    <p style={{ color: 'var(--text-secondary)' }}>Devolva uma % do valor para uso futuro</p>
-                  </div>
-                  <label className="switch">
-                    <input type="checkbox" defaultChecked />
-                    <span className="slider round"></span>
-                  </label>
+              <div className="metrics-grid" style={{ marginBottom: '2rem' }}>
+                <div className="metric-card" style={{ background: 'var(--bg-secondary)' }}>
+                   <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Total Distribuído</div>
+                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#10b981' }}>R$ 485,50</div>
                 </div>
-                
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Devolver</span>
-                  <input type="number" defaultValue={5} style={{ width: '80px', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} />
-                  <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>% do valor pago.</span>
+                <div className="metric-card" style={{ background: 'var(--bg-secondary)' }}>
+                   <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Total Resgatado</div>
+                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>R$ 120,00</div>
                 </div>
+                <div className="metric-card" style={{ background: 'var(--bg-secondary)' }}>
+                   <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Taxa de Regresso</div>
+                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--accent-primary)' }}>34%</div>
+                </div>
+              </div>
+
+              <div className="section-card" style={{ background: 'var(--bg-secondary)', padding: 0, overflow: 'hidden' }}>
+                <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                   <h3 style={{ fontSize: '1.1rem' }}>Extrato de Cashbacks</h3>
+                   <button className="btn-text" style={{ fontSize: '0.85rem' }}>Filtros</button>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                      <th style={{ padding: '0.8rem 1.5rem', fontWeight: 600 }}>Data da Compra</th>
+                      <th style={{ padding: '0.8rem 1.5rem', fontWeight: 600 }}>Cliente</th>
+                      <th style={{ padding: '0.8rem 1.5rem', fontWeight: 600 }}>Cashback Gerado</th>
+                      <th style={{ padding: '0.8rem 1.5rem', fontWeight: 600 }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cashbacks.map((c) => (
+                      <tr key={c.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                         <td style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)' }}>{c.data}</td>
+                         <td style={{ padding: '1rem 1.5rem', fontWeight: 'bold' }}>{c.cliente}</td>
+                         <td style={{ padding: '1rem 1.5rem', color: '#10b981', fontWeight: 'bold' }}>+ R$ {c.valorAplicado.toFixed(2).replace('.',',')}</td>
+                         <td style={{ padding: '1rem 1.5rem' }}>
+                            {c.status === 'Resgatado' ? (
+                              <span style={{ padding: '0.2rem 0.6rem', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', fontSize: '0.8rem' }}>Resgatado</span>
+                            ) : (
+                              <span style={{ padding: '0.2rem 0.6rem', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', borderRadius: '4px', fontSize: '0.8rem' }}>Pendente</span>
+                            )}
+                         </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
 
           {activeTab === 'promocoes' && (
             <div>
-              <h2 style={{ marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>Disparo de Mensagens</h2>
+              <h2 style={{ marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>Disparo em Massa & CRM</h2>
               
+              <div className="section-card" style={{ background: 'var(--bg-secondary)', marginBottom: '1.5rem' }}>
+                <h3 style={{ marginBottom: '1rem' }}>Segmentação de Público</h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+                   <div 
+                      onClick={() => setFiltroAlvo('inativos')}
+                      style={{ padding: '1.2rem', background: 'var(--bg-primary)', borderRadius: '8px', border: filtroAlvo === 'inativos' ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+                   >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                         <strong>💤 Inativos ({'>'} 30 dias)</strong>
+                         <span style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem' }}>{inativosCount}</span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Clientes que não pisam na barbearia há um mês.</span>
+                   </div>
+
+                   <div 
+                      onClick={() => setFiltroAlvo('vip')}
+                      style={{ padding: '1.2rem', background: 'var(--bg-primary)', borderRadius: '8px', border: filtroAlvo === 'vip' ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+                   >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                         <strong>⭐ Clientes VIPs (Top 10)</strong>
+                         <span style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem' }}>{ranking.length}</span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Os clientes que dão mais lucro.</span>
+                   </div>
+
+                   <div 
+                      onClick={() => setFiltroAlvo('todos')}
+                      style={{ padding: '1.2rem', background: 'var(--bg-primary)', borderRadius: '8px', border: filtroAlvo === 'todos' ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+                   >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                         <strong>📢 Toda Base Base</strong>
+                         <span style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem' }}>{totalClientes}</span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Disparar para absolutamente todo mundo.</span>
+                   </div>
+                </div>
+              </div>
+
               <div className="section-card" style={{ background: 'var(--bg-secondary)' }}>
-                <h3>Criar Promoção</h3>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>Envie uma mensagem no WhatsApp para todos os clientes que não vêm há mais de 30 dias.</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                   <h3>Conteúdo da Mensagem</h3>
+                   <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Variáveis suportadas: <code style={{ margin: '0 4px', background: 'var(--bg-primary)', padding: '2px 6px', borderRadius: '4px' }}>{"{nome}"}</code></span>
+                </div>
                 
                 <textarea 
-                  rows={4}
+                  rows={5}
                   value={promoMessage}
                   onChange={e => setPromoMessage(e.target.value)}
-                  style={{ width: '100%', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white', marginBottom: '1rem', resize: 'vertical' }} 
+                  style={{ width: '100%', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white', marginBottom: '1.5rem', resize: 'vertical' }} 
                 />
                 
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                    <span style={{ fontSize: '1.2rem', color: '#f59e0b' }}>⚠️</span> Não envie spans para evitar bloqueio no WhatsApp.
+                  </div>
                   <button className="btn-primary" style={{ padding: '0.8rem 1.5rem', opacity: isSending ? 0.7 : 1 }} onClick={handleDisparo} disabled={isSending}>
-                    {isSending ? 'Disparando...' : `🚀 Disparar para ${inativosCount} Clientes Inativos`}
+                    {isSending ? 'Processando fila...' : `🚀 Disparar para ${filtroAlvo === 'inativos' ? inativosCount : (filtroAlvo === 'todos' ? totalClientes : ranking.length)} Clientes`}
                   </button>
                 </div>
               </div>
@@ -146,53 +284,6 @@ export default function MarketingPage() {
           )}
         </div>
       </div>
-      
-      {/* Switch CSS directly injected here for the mock UI to prevent touching global CSS right now */}
-      <style dangerouslySetInnerHTML={{__html: `
-        .switch {
-          position: relative;
-          display: inline-block;
-          width: 50px;
-          height: 28px;
-        }
-        .switch input { 
-          opacity: 0;
-          width: 0;
-          height: 0;
-        }
-        .slider {
-          position: absolute;
-          cursor: pointer;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-color: var(--border-color);
-          transition: .4s;
-        }
-        .slider:before {
-          position: absolute;
-          content: "";
-          height: 20px;
-          width: 20px;
-          left: 4px;
-          bottom: 4px;
-          background-color: white;
-          transition: .4s;
-        }
-        input:checked + .slider {
-          background-color: var(--accent-primary);
-        }
-        input:checked + .slider:before {
-          transform: translateX(22px);
-        }
-        .slider.round {
-          border-radius: 34px;
-        }
-        .slider.round:before {
-          border-radius: 50%;
-        }
-      `}} />
     </div>
   );
 }

@@ -8,7 +8,8 @@ export default function ConfiguracoesPage() {
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
   const [isFetchingQrCode, setIsFetchingQrCode] = useState(false);
   const [qrCodeMessage, setQrCodeMessage] = useState("");
-  const [planoAtual, setPlanoAtual] = useState<"basico" | "pro">("pro"); 
+  const [isWhatsappConnected, setIsWhatsappConnected] = useState(false);
+  const planoAtual = "pro";
   const [isLoading, setIsLoading] = useState(true);
 
   const [barbeiros, setBarbeiros] = useState<any[]>([]);
@@ -29,6 +30,14 @@ export default function ConfiguracoesPage() {
       if (sData && sData.length > 0) {
         setServicos(sData);
       }
+      
+      // Fetch WhatsApp status
+      try {
+        const fetchStatus = await fetch('/api/whatsapp/status');
+        const st = await fetchStatus.json();
+        if (st.connected) setIsWhatsappConnected(true);
+      } catch(e) {}
+
       setIsLoading(false);
     }
     loadData();
@@ -52,6 +61,7 @@ export default function ConfiguracoesPage() {
         setQrCodeMessage("Escaneie o QR Code abaixo com o WhatsApp da Barbearia");
       } else if (data.alreadyConnected) {
          setQrCodeMessage("Seu número já está conectado e pronto para disparos! ✅");
+         setIsWhatsappConnected(true);
       } else {
          setQrCodeMessage("Houve um erro: " + (data.error || "Tente novamente."));
       }
@@ -263,25 +273,11 @@ export default function ConfiguracoesPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
                 <h2>Equipe e Barbeiros</h2>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                   {/* Switch de simulação temporário para testes */}
-                   <select 
-                     value={planoAtual} 
-                     onChange={(e) => setPlanoAtual(e.target.value as "basico" | "pro")}
-                     style={{ padding: '0.4rem', borderRadius: '4px', background: 'var(--bg-secondary)', color: 'white', border: '1px solid var(--border-color)' }}
-                   >
-                     <option value="basico">Testar como: Plano Básico</option>
-                     <option value="pro">Testar como: Plano PRO</option>
-                   </select>
-
                    <button 
                      className="btn-primary" 
-                     style={{ padding: '0.4rem 1rem', fontSize: '0.9rem', background: (planoAtual === 'pro' && barbeiros.length >= limiteBarbeiros) ? 'transparent' : 'var(--accent-primary)', border: (planoAtual === 'pro' && barbeiros.length >= limiteBarbeiros) ? '1px dashed var(--accent-primary)' : 'none', color: (planoAtual === 'pro' && barbeiros.length >= limiteBarbeiros) ? 'var(--accent-primary)' : 'white' }}
+                     style={{ padding: '0.4rem 1rem', fontSize: '0.9rem', background: (barbeiros.length >= limiteBarbeiros) ? 'transparent' : 'var(--accent-primary)', border: (barbeiros.length >= limiteBarbeiros) ? '1px dashed var(--accent-primary)' : 'none', color: (barbeiros.length >= limiteBarbeiros) ? 'var(--accent-primary)' : 'white' }}
                      onClick={async () => {
-                        if (planoAtual === 'basico' && barbeiros.length >= 1) {
-                           alert('Seu Plano Básico permite apenas 1 barbeiro exclusivo. Fale conosco para fazer um Upgrade para o PRO e adicionar mais membros à sua barbearia!');
-                           return;
-                        }
-                        if (planoAtual === 'pro' && barbeiros.length >= limiteBarbeiros) {
+                        if (barbeiros.length >= limiteBarbeiros) {
                            alert('Sua solicitação de Barbeiro Adicional no valor de R$ 50,00/mês foi enviada para o administrador. Aguarde a aprovação para liberar o novo slot em sua agenda.');
                            return;
                         }
@@ -290,7 +286,7 @@ export default function ConfiguracoesPage() {
                         if (data) setBarbeiros([...barbeiros, data]);
                      }}
                    >
-                     {(planoAtual === 'pro' && barbeiros.length >= limiteBarbeiros) ? '📝 Solicitar Adicional (+R$50)' : '+ Novo Barbeiro'}
+                     {(barbeiros.length >= limiteBarbeiros) ? '📝 Solicitar Adicional (+R$50)' : '+ Novo Barbeiro'}
                    </button>
                 </div>
               </div>
@@ -298,17 +294,17 @@ export default function ConfiguracoesPage() {
               <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px', border: '1px dashed var(--border-color)', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h4 style={{ color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-                    {planoAtual === 'basico' ? 'Regra do Plano Básico: 1 Barbeiro Máximo' : 'Regra do Plano PRO: 5 Barbeiros Inclusos'}
+                    Regra do Plano PRO: 5 Barbeiros Inclusos
                   </h4>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                    {planoAtual === 'basico' ? 'Para adicionar mais profissionais, faça upgrade para o PRO.' : 'Profissionais adicionais mediante aprovação: + R$ 50,00/mês por barbeiro.'}
+                    Profissionais adicionais mediante aprovação: + R$ 50,00/mês por barbeiro.
                   </p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <span style={{ display: 'block', fontSize: '1.2rem', fontWeight: 'bold', color: assinandoAdicionais ? 'var(--accent-primary)' : 'var(--text-primary)' }}>
-                    {barbeiros.length} / {planoAtual === 'basico' ? '1' : limiteBarbeiros.toString()}
+                    {barbeiros.length} / {limiteBarbeiros}
                   </span>
-                  {assinandoAdicionais && planoAtual === 'pro' && (
+                  {assinandoAdicionais && (
                     <span style={{ fontSize: '0.8rem', color: 'var(--accent-primary)' }}>Acréscimo: + R$ {custoExtraMensal.toFixed(2)}</span>
                   )}
                 </div>
@@ -396,8 +392,15 @@ export default function ConfiguracoesPage() {
               <h2 style={{ marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>Robô de WhatsApp</h2>
               
               <div className="section-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', background: 'var(--bg-secondary)', border: '1px dashed var(--border-color)' }}>
-                 <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📱</div>
-                 <h3 style={{ marginBottom: '0.5rem', color: 'var(--accent-primary)' }}>Conecte o seu celular</h3>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                    <div style={{ fontSize: '3rem' }}>📱</div>
+                    {isWhatsappConnected ? (
+                      <span style={{ background: 'rgba(37, 211, 102, 0.15)', color: '#25D366', padding: '0.5rem 1rem', borderRadius: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span style={{ width: '8px', height: '8px', background: '#25D366', borderRadius: '50%', display: 'inline-block' }}></span> Conectado e Ativo</span>
+                    ) : (
+                      <span style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', padding: '0.5rem 1rem', borderRadius: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span style={{ width: '8px', height: '8px', background: '#ef4444', borderRadius: '50%', display: 'inline-block' }}></span> Desconectado</span>
+                    )}
+                 </div>
+                 <h3 style={{ marginBottom: '0.5rem', color: 'var(--accent-primary)' }}>Conexão com WhatsApp</h3>
                  <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', maxWidth: '400px' }}>
                    Para que o sistema envie lembretes automáticos para seus clientes, precisamos nos conectar ao WhatsApp da sua barbearia (como se fosse o WhatsApp Web).
                  </p>
