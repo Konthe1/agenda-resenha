@@ -13,6 +13,7 @@ export default function MasterDashboardPage() {
     { id: 2, nome: "The Classic Barber", dono: "Thiago Silva", plano: "PRO", valorMensal: 249.99, barbeirosTotais: 7, barbeirosExtras: 2, statusPagamento: "Pago", whatsappOnline: true },
     { id: 3, nome: "Brotherhood Shop", dono: "Marcos Ribeiro", plano: "Básico", valorMensal: 59.99, barbeirosTotais: 1, barbeirosExtras: 0, statusPagamento: "Atrasado", whatsappOnline: false },
     { id: 4, nome: "Navalha Premium", dono: "João Pedro", plano: "PRO", valorMensal: 149.99, barbeirosTotais: 4, barbeirosExtras: 0, statusPagamento: "Pago", whatsappOnline: true },
+    { id: 5, nome: "Barbearia do Zé", dono: "José Carlos", plano: "Trial V.I", valorMensal: 0.00, barbeirosTotais: 2, barbeirosExtras: 0, statusPagamento: "Trial (10 dias)", whatsappOnline: true },
   ]);
 
   const [solicitacoes, setSolicitacoes] = useState([
@@ -73,6 +74,17 @@ export default function MasterDashboardPage() {
           <div className="metric-value" style={{ color: '#f8fafc' }}>1</div>
           <div className="metric-trend">
             <span style={{ color: '#64748b' }}>Instância do WhatsApp offline</span>
+          </div>
+        </div>
+
+        <div className="metric-card master-card">
+          <div className="metric-header">
+            <span className="metric-title" style={{ color: '#94a3b8' }}>Free Trials Ativos</span>
+            <div className="metric-icon" style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#a78bfa' }}>⏳</div>
+          </div>
+          <div className="metric-value" style={{ color: '#f8fafc' }}>1</div>
+          <div className="metric-trend">
+            <span style={{ color: '#64748b' }}>Teste grátis de 14 dias</span>
           </div>
         </div>
       </div>
@@ -164,6 +176,8 @@ export default function MasterDashboardPage() {
                   <td>
                     {cliente.statusPagamento === 'Pago' ? (
                       <span className="master-badge success">Em Dia</span>
+                    ) : cliente.statusPagamento.includes('Trial') ? (
+                      <span className="master-badge info" style={{ color: '#c4b5fd', background: 'rgba(139, 92, 246, 0.15)' }}>{cliente.statusPagamento}</span>
                     ) : (
                       <span className="master-badge danger">Atrasado</span>
                     )}
