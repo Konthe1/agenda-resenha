@@ -157,10 +157,16 @@ export default function ConfiguracoesPage() {
                   className="btn-primary" 
                   style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}
                   onClick={async () => {
-                     const { data, error } = await supabase.from('servicos').insert({ barbearia_id: '1', nome: 'Novo Serviço', descricao: '', preco_base: 0, duracao_minutos: 30 }).select().single();
+                     const { data: { session } } = await supabase.auth.getSession();
+                     if (!session) return;
+                     const userId = session.user.id;
+                     
+                     const { data, error } = await supabase.from('servicos').insert({ barbearia_id: userId, nome: 'Novo Serviço', descricao: '', preco_base: 0, duracao_minutos: 30 }).select().single();
                      if (data) {
                        setServicos([{...data, precos_barbeiros: {}}, ...servicos]);
                        setEditingServiceId(data.id);
+                     } else {
+                       console.error("Erro ao criar serviço", error);
                      }
                   }}
                 >+ Novo Serviço</button>
@@ -281,8 +287,12 @@ export default function ConfiguracoesPage() {
                            alert('Sua solicitação de Barbeiro Adicional no valor de R$ 50,00/mês foi enviada para o administrador. Aguarde a aprovação para liberar o novo slot em sua agenda.');
                            return;
                         }
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (!session) return;
+                        const userId = session.user.id;
+
                         const foto = "N";
-                        const { data } = await supabase.from('barbeiros').insert({ barbearia_id: '1', nome: 'Novo Barbeiro', especialidade: '...', foto_url: foto, ativo: true }).select().single();
+                        const { data } = await supabase.from('barbeiros').insert({ barbearia_id: userId, nome: 'Novo Barbeiro', especialidade: '...', foto_url: foto, ativo: true }).select().single();
                         if (data) setBarbeiros([...barbeiros, data]);
                      }}
                    >
