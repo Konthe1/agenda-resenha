@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Resenha - Agenda para Barbearias",
-  description: "O sistema de agendamento que fala a língua da barbearia nordestina.",
+  title: "Agenda Resenha PRO | Sistema de Gestão para Barbearias",
+  description: "A única plataforma focada no lucro do dono. Agendamento 24h, disparo automático de WhatsApp, controle de equipe e fidelidade de clientes. Especialize-se na tesoura e deixe a tecnologia lotar sua agenda.",
 };
 
 export default function RootLayout({
