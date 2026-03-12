@@ -107,7 +107,9 @@ export default function ConfiguracoesPage() {
       return data.publicUrl;
     } catch (error: any) {
       if (error.message?.includes('Bucket not found') || error.error === 'Bucket not found') {
-        alert('Erro: O Bucket "barbearia-assets" não foi encontrado no Banco de Dados.\n\nPor favor, copie o código do script "setup_storage.sql" que eu criei anteriormente e rode ele no SQL Editor do seu Supabase. Isso vai criar o bucket de imagens e resolver este erro!');
+        alert('Erro: O Bucket "barbearia-assets" não foi encontrado.\n\nPor favor, execute o script SQL "setup_storage.sql" no painel do Supabase.');
+      } else if (error.message?.includes('row-level security') || error.message?.includes('RLS')) {
+        alert('Erro de Permissão (RLS): O seu banco de dados bloqueou o upload por segurança.\n\nPor favor, copie e execute o NOVO script "fix_storage_rls_v3.sql" que eu criei no painel SQL do Supabase. Ele vai liberar o acesso forçado para você conseguir subir as fotos agora!');
       } else {
         alert('Erro ao fazer upload da imagem: ' + (error.message || 'Erro desconhecido.'));
       }
@@ -168,20 +170,28 @@ export default function ConfiguracoesPage() {
       try {
         const fetchStatus = await fetch('/api/whatsapp/status');
         const st = await fetchStatus.json();
+        
         if (st.connected) {
            setIsWhatsappConnected(true);
         } else {
-           // Automatic wake up/reconnect for WhatsApp
+           console.log("WhatsApp desconectado. Tentando 'acordar' automaticamente...");
+           setQrCodeMessage("📱 Tentando reconectar ao WhatsApp automaticamente...");
+           
            const resConnect = await fetch('/api/whatsapp/connect', { method: 'POST' });
            const dataConnect = await resConnect.json();
+           
            if (dataConnect.alreadyConnected) {
+              console.log("WhatsApp reconectado com sucesso!");
               setIsWhatsappConnected(true);
+              setQrCodeMessage("");
            } else if (dataConnect.qrcode) {
               setQrCodeData(dataConnect.qrcode);
               setQrCodeMessage("Escaneie o QR Code abaixo com o WhatsApp da Barbearia");
            }
         }
-      } catch(e) {}
+      } catch(e) {
+        console.error("Erro ao tentar auto-conectar WhatsApp:", e);
+      }
 
       setIsLoading(false);
     }
