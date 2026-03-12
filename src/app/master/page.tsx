@@ -22,8 +22,9 @@ export default function MasterDashboardPage() {
   useEffect(() => {
     async function loadKpis() {
       setIsLoading(true);
-      // Puxa total de barbearias ativas
-      const { data: bData } = await supabase.from('barbearias').select('id, nome, criado_em');
+      // Puxa total de barbearias e quantidade de barbeiros globais
+      const { data: bData } = await supabase.from('barbearias').select('*');
+      const { data: barbersData } = await supabase.from('barbeiros').select('id, barbearia_id');
       
       if (bData) {
         setActiveClients(bData.length);
@@ -36,43 +37,44 @@ export default function MasterDashboardPage() {
         setFreeTrials(trials.length);
 
         // Preenche de verdade na tabela
-        const reais = bData.map((b, i) => ({
-           id: b.id,
-           nome: b.nome || 'Barbearia Sem Nome',
-           dono: 'Desconhecido',
-           plano: new Date(b.criado_em) >= fourteenDaysAgo ? 'Trial 14 Dias' : 'PRO',
-           valorMensal: new Date(b.criado_em) >= fourteenDaysAgo ? 0 : 149.90,
-           barbeirosTotais: 1,
-           barbeirosExtras: 0,
-           statusPagamento: new Date(b.criado_em) >= fourteenDaysAgo ? `Trial (${14 - Math.floor((new Date().getTime() - new Date(b.criado_em).getTime()) / (1000 * 3600 * 24))} dias rest.)` : 'Pago',
-           whatsappOnline: true
-        }));
+        const reais = bData.map((b) => {
+           const teamSize = barbersData ? barbersData.filter(barb => barb.barbearia_id === b.id).length : 0;
+           return {
+             id: b.id,
+             nome: b.nome || 'Barbearia Sem Nome',
+             dono: 'Sistema',
+             plano: b.plano_ativo || (new Date(b.criado_em) >= fourteenDaysAgo ? 'Trial 14 Dias' : 'Expirado'),
+             valorMensal: b.plano_ativo === 'PRO' ? 149.90 : 0,
+             barbeirosTotais: teamSize,
+             barbeirosExtras: Math.max(0, teamSize - 5), // Assumindo base 5 default
+             statusPagamento: b.status_pagamento || 'Pendente',
+             whatsappOnline: true
+           };
+        });
         
-        // Mesclar com os mocks para demonstração ter volume
-        setClientes([...reais, ...clientes.slice(1)]);
+        setClientes(reais);
         
-        // Estimar MRR = (Total Clientes Premium * 149.90)
-        const premiumCount = bData.length - trials.length;
-        setMrr((premiumCount * 149.90) + 8500); // 8500 = mock base revenue
+        // Estimar MRR Real (Total Clientes Premium * 149.90)
+        const premiumCount = reais.filter(c => c.plano === 'PRO').length;
+        setMrr((premiumCount * 149.90));
       }
       setIsLoading(false);
     }
     loadKpis();
   }, []);
 
-  const [solicitacoes, setSolicitacoes] = useState([
-    { id: 101, barbeariaId: 4, nomeBarbearia: "Navalha Premium", planoAtual: "PRO", barbeirosAtuais: 5, qtdSolicitada: 1, custoAdicional: 50.00, data: "Hoje, 10:45" },
-    { id: 102, barbeariaId: 1, nomeBarbearia: "Resenha Barber", planoAtual: "PRO", barbeirosAtuais: 5, qtdSolicitada: 2, custoAdicional: 100.00, data: "Ontem, 16:20" },
-  ]);
-
-  const handleAprovarSolicitacao = (id: number) => {
-    // In a real app, this would call Supabase to update the barbearia's plan limits and MRR
-    setSolicitacoes(solicitacoes.filter(s => s.id !== id));
-    alert(`Solicitação #${id} Aprovada com sucesso! A mensalidade do cliente foi atualizada.`);
-  };
-
-  const handleRejeitarSolicitacao = (id: number) => {
-    setSolicitacoes(solicitacoes.filter(s => s.id !== id));
+  const handleToggleStatus = async (barbeariaId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'Suspenso' ? 'Ativo' : 'Suspenso';
+    const newPlan = newStatus === 'Suspenso' ? 'Expirado' : 'PRO';
+    
+    // In a real app we would call Supabase
+    const { error } = await supabase.from('barbearias').update({ status_pagamento: newStatus, plano_ativo: newPlan }).eq('id', barbeariaId);
+    if (!error) {
+      setClientes(clientes.map(c => c.id === barbeariaId ? { ...c, statusPagamento: newStatus, plano: newPlan } : c));
+      alert(`Status atualizado para ${newStatus} com sucesso!`);
+    } else {
+      alert("Erro ao atualizar o status." + error.message);
+    }
   };
 
   return (
@@ -133,37 +135,7 @@ export default function MasterDashboardPage() {
         </div>
       </div>
 
-      {/* Solicitações Pendentes (Barbeiros Extras) */}
-      {solicitacoes.length > 0 && (
-        <section style={{ marginBottom: '3rem' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: '#f8fafc' }}>
-            🔔 Solicitações de Barbeiros Extras ({solicitacoes.length})
-          </h2>
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {solicitacoes.map(sol => (
-              <div key={sol.id} className="master-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #f59e0b' }}>
-                <div>
-                  <h4 style={{ color: '#f8fafc', marginBottom: '0.25rem' }}>{sol.nomeBarbearia}</h4>
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-                    Solicitou +{sol.qtdSolicitada} Barbeiro(s) • Acréscimo na mensalidade: <strong style={{ color: '#34d399' }}>+ R$ {sol.custoAdicional.toFixed(2).replace('.', ',')}</strong>
-                  </p>
-                  <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Pedido feito em: {sol.data}</span>
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button className="btn-master" style={{ padding: '0.5rem 1rem' }} onClick={() => handleAprovarSolicitacao(sol.id)}>
-                    ✓ Aprovar
-                  </button>
-                  <button className="btn-master-outline" style={{ padding: '0.5rem 1rem' }} onClick={() => handleRejeitarSolicitacao(sol.id)}>
-                    ✕ Recusar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Tabela de Clientes */}
+      {/* Tabela Remodulada Direta */}
       <section>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h2 style={{ fontSize: '1.25rem', color: '#f8fafc' }}>Carteira de Clientes ({clientes.length})</h2>

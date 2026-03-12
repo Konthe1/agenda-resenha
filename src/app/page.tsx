@@ -6,6 +6,7 @@ import "./page.css";
 
 export default function Home() {
   const [isAnnual, setIsAnnual] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   return (
     <div className="landing-container">
       {/* Background Decor */}
@@ -30,6 +31,28 @@ export default function Home() {
           <Link href="/login" className="nav-link">Entrar</Link>
           <Link href="/login" className="btn-primary" style={{ padding: '0.6rem 1.25rem' }}>Criar Conta</Link>
         </div>
+        
+        {/* Mobile menu toggle */}
+        <button 
+          className="mobile-menu-btn" 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? '✕' : '☰'}
+        </button>
+
+        {/* Mobile Dropdown Menu */}
+        {isMobileMenuOpen && (
+          <div className="mobile-menu-dropdown animate-fade-in">
+            <a href="#recursos" className="mobile-link" onClick={() => setIsMobileMenuOpen(false)}>Recursos</a>
+            <a href="#depoimentos" className="mobile-link" onClick={() => setIsMobileMenuOpen(false)}>Cases de Sucesso</a>
+            <a href="#precos" className="mobile-link" onClick={() => setIsMobileMenuOpen(false)}>Preços</a>
+            <a href="#faq" className="mobile-link" onClick={() => setIsMobileMenuOpen(false)}>FAQ</a>
+            <div className="mobile-actions">
+              <Link href="/login" className="btn-secondary" onClick={() => setIsMobileMenuOpen(false)}>Entrar</Link>
+              <Link href="/login" className="btn-primary" onClick={() => setIsMobileMenuOpen(false)}>Criar Conta</Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       <main className="landing-content">

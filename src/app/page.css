@@ -34,7 +34,7 @@
 .nav-brand {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1.25rem;
   font-size: 1.5rem;
   font-family: var(--font-heading);
   font-weight: 800;
@@ -65,6 +65,46 @@
   display: flex;
   gap: 1rem;
   align-items: center;
+}
+
+.mobile-menu-btn {
+  display: none;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.mobile-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--bg-tertiary);
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  z-index: 40;
+}
+
+.mobile-link {
+  padding: 1rem 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--bg-tertiary);
+  font-weight: 500;
+}
+
+.mobile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-bottom: 1rem;
 }
 
 /* Hero Section */
@@ -480,6 +520,10 @@
   color: var(--text-primary);
 }
 
+.footer-col p {
+  margin-top: 1rem;
+}
+
 .footer-links {
   list-style: none;
   display: flex;
@@ -578,10 +622,34 @@
 
 @media (max-width: 767px) {
   .nav-links, .nav-actions {
-    display: none; /* Em um cenário real teriamos um menu hamburguer */
+    display: none; 
+  }
+
+  .mobile-menu-btn {
+    display: block;
   }
   
   .pricing-card.popular {
     transform: scale(1);
+  }
+
+  /* Footer Mobile Fix */
+  .footer-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 2rem;
+  }
+  
+  .footer-col .nav-brand {
+    justify-content: center;
+  }
+
+  .logo-cloud {
+    gap: 1.5rem;
+    padding: 0 1rem;
+  }
+
+  .nav-brand span {
+    font-size: 1.35rem !important;
   }
 }

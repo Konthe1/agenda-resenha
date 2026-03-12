@@ -28,6 +28,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [newBooking, setNewBooking] = useState<NewBookingAlert | null>(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -191,8 +192,20 @@ export default function DashboardLayout({
         </div>
       )}
 
+      {/* Mobile Top Header */}
+      <div className="mobile-header">
+         <span className="mobile-header-brand">Resenha<span className="accent">Admin</span></span>
+         <button className="mobile-menu-btn" onClick={() => setIsMobileSidebarOpen(true)}>☰</button>
+      </div>
+
+      {/* Backdrop for Mobile Sidebar */}
+      <div 
+        className={`sidebar-backdrop ${isMobileSidebarOpen ? 'open' : ''}`}
+        onClick={() => setIsMobileSidebarOpen(false)}
+      ></div>
+
       {/* Sidebar */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${isMobileSidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-brand">
             <img src="/logo.png" alt="Logo" style={{ width: '64px', height: '64px', borderRadius: '12px', objectFit: 'contain' }} />

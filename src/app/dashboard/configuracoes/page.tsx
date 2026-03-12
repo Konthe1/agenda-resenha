@@ -26,6 +26,59 @@ export default function ConfiguracoesPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'barbeiro' | 'servico', id: string, nome: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // States for Schedule (Horários)
+  const defaultHorarios = {
+    segunda: { ativo: false, inicio: "09:00", fim: "18:00" },
+    terca: { ativo: true, inicio: "09:00", fim: "18:00" },
+    quarta: { ativo: true, inicio: "09:00", fim: "18:00" },
+    quinta: { ativo: true, inicio: "09:00", fim: "18:00" },
+    sexta: { ativo: true, inicio: "09:00", fim: "18:00" },
+    sabado: { ativo: true, inicio: "09:00", fim: "15:00" },
+    domingo: { ativo: false, inicio: "09:00", fim: "12:00" }
+  };
+  const [selectedScheduleId, setSelectedScheduleId] = useState('geral');
+  const [scheduleData, setScheduleData] = useState<any>(defaultHorarios);
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+
+  // Load correct schedule object when dropdown changes
+  useEffect(() => {
+    if (selectedScheduleId === 'geral') {
+       // Mock for now or load from barbearia if it existed.
+       setScheduleData(defaultHorarios);
+    } else {
+       const barbeiro = barbeiros.find(b => b.id === selectedScheduleId);
+       if (barbeiro && barbeiro.horarios_trabalho) {
+         setScheduleData(barbeiro.horarios_trabalho);
+       } else {
+         setScheduleData(defaultHorarios); // Fallback to default
+       }
+    }
+  }, [selectedScheduleId, barbeiros]);
+
+  // Handle Save
+  const handleSaveSchedule = async () => {
+     setIsSavingSchedule(true);
+     try {
+       if (selectedScheduleId === 'geral') {
+         alert("No futuro, isso atualizará o horário central da Barbearia.");
+       } else {
+         const { error } = await supabase
+           .from('barbeiros')
+           .update({ horarios_trabalho: scheduleData })
+           .eq('id', selectedScheduleId);
+           
+         if (error) throw error;
+         alert("Horários do profissional salvos com sucesso!");
+         // Refresh list memory
+         setBarbeiros(bList => bList.map(b => b.id === selectedScheduleId ? { ...b, horarios_trabalho: scheduleData } : b));
+       }
+     } catch (e: any) {
+       alert("Erro ao salvar: " + e.message);
+     } finally {
+       setIsSavingSchedule(false);
+     }
+  };
+
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
@@ -364,15 +417,12 @@ export default function ConfiguracoesPage() {
                 <h2>Horários de Funcionamento</h2>
                 <select 
                   style={{ padding: '0.6rem 1rem', borderRadius: '8px', background: 'var(--bg-secondary)', color: 'white', border: '1px solid var(--accent-primary)', outline: 'none', fontWeight: 'bold' }}
-                  onChange={(e) => {
-                     // Lógica simplificada para a demonstração do MVP
-                     // Na versão real, isso carregaria o JSON correspondente
-                     alert("Editando horários da entidade selecionada. (Simulação salva automaticamente na versão MVP)");
-                  }}
+                  value={selectedScheduleId}
+                  onChange={(e) => setSelectedScheduleId(e.target.value)}
                 >
                    <option value="geral">Geral (Barbearia)</option>
                    {barbeiros.map(b => (
-                     <option key={b.id} value={b.id}>Barbeiro: {b.nome}</option>
+                     <option key={b.id} value={b.id}>Profissional: {b.nome}</option>
                    ))}
                 </select>
               </div>
@@ -382,31 +432,54 @@ export default function ConfiguracoesPage() {
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                {['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'].map((dia, i) => (
-                  <div key={dia} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)', opacity: dia === 'Domingo' ? 0.6 : 1 }}>
-                    <div style={{ width: '100px', fontWeight: '500' }}>{dia}</div>
+                {['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'].map((diaKey) => {
+                  const labelStr = diaKey.charAt(0).toUpperCase() + diaKey.slice(1);
+                  const conf = scheduleData[diaKey] || { ativo: false, inicio: "09:00", fim: "18:00" };
+                  
+                  return (
+                  <div key={diaKey} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)', opacity: conf.ativo ? 1 : 0.5 }}>
+                    <div style={{ width: '100px', fontWeight: '500' }}>{labelStr}</div>
                     
-                    {dia === 'Domingo' ? (
+                    {!conf.ativo ? (
                        <div style={{ flex: 1, color: 'var(--text-secondary)', textAlign: 'center' }}>Folga / Fechado</div>
                     ) : (
                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <input type="time" defaultValue="09:00" style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} />
+                          <input 
+                            type="time" 
+                            value={conf.inicio} 
+                            onChange={(e) => setScheduleData({ ...scheduleData, [diaKey]: { ...conf, inicio: e.target.value } })}
+                            style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} 
+                          />
                           <span style={{ color: 'var(--text-secondary)' }}>até</span>
-                          <input type="time" defaultValue={dia === 'Sábado' ? "17:00" : "20:00"} style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} />
+                          <input 
+                            type="time" 
+                            value={conf.fim} 
+                            onChange={(e) => setScheduleData({ ...scheduleData, [diaKey]: { ...conf, fim: e.target.value } })}
+                            style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} 
+                          />
                        </div>
                     )}
                     
                     <label className="switch">
-                      <input type="checkbox" defaultChecked={dia !== 'Domingo'} />
+                      <input 
+                        type="checkbox" 
+                        checked={conf.ativo} 
+                        onChange={(e) => setScheduleData({ ...scheduleData, [diaKey]: { ...conf, ativo: e.target.checked } })}
+                      />
                       <span className="slider round"></span>
                     </label>
                   </div>
-                ))}
+                )})}
               </div>
               
               <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
-                <button className="btn-primary" style={{ padding: '0.8rem 2rem', background: '#10b981', border: 'none' }} onClick={() => alert('Horários salvos e integrados ao calendário de agendamentos com sucesso!')}>
-                  Salvar Grade de Horários
+                <button 
+                  className="btn-primary" 
+                  style={{ padding: '0.8rem 2rem', background: '#10b981', border: 'none' }} 
+                  onClick={handleSaveSchedule}
+                  disabled={isSavingSchedule}
+                >
+                  {isSavingSchedule ? 'Salvando...' : 'Salvar Grade de Horários'}
                 </button>
               </div>
             </div>

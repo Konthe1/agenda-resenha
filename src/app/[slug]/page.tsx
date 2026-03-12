@@ -422,8 +422,14 @@ export default function BookingPage() {
         {/* STEP 2: SERVICES */}
         {step === 2 && (
           <div className="booking-step slide-in-bottom">
-            <h2 className="step-title">
-              <span className="step-number">2</span> Escolha o Serviço
+            <h2 className="step-title" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <button 
+                onClick={() => setStep(1)} 
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}
+              >
+                ←
+              </button>
+              <span>Escolha o Serviço</span>
             </h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.9rem' }}>Os valores exibidos são cobrados pelo profissional <strong>{selectedBarbeiro?.nome}</strong></p>
             <div className="service-list">
@@ -471,8 +477,14 @@ export default function BookingPage() {
         {/* STEP 3: DATE & TIME */}
         {step === 3 && (
           <div className="booking-step slide-in-bottom">
-            <h2 className="step-title">
-              <span className="step-number">3</span> Data e Horário
+            <h2 className="step-title" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <button 
+                onClick={() => setStep(2)} 
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}
+              >
+                ←
+              </button>
+              <span>Data e Horário</span>
             </h2>
             
             <p style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Dias disponíveis de {selectedBarbeiro?.nome}</p>
@@ -525,8 +537,14 @@ export default function BookingPage() {
         {/* STEP 4: CLIENT INFO */}
         {step === 4 && (
           <div className="booking-step slide-in-bottom">
-            <h2 className="step-title">
-              <span className="step-number">4</span> Seus Dados
+            <h2 className="step-title" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <button 
+                onClick={() => setStep(3)} 
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}
+              >
+                ←
+              </button>
+              <span>Apenas Seus Dados</span>
             </h2>
             
             <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--bg-primary)', borderRadius: '0.5rem', fontSize: '0.9rem', border: '1px solid var(--border-color)' }}>
