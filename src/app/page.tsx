@@ -176,7 +176,7 @@ export default function Home() {
               <div className="popular-badge">Mais Escolhido</div>
               <div className="pricing-header">
                 <h3>Resenha Pro (Até 5 Barbeiros)</h3>
-                <div className="price"><span>R$</span>{isAnnual ? '83' : '149'}<span>,{isAnnual ? '33' : '99'} /mês</span></div>
+                <div className="price"><span>R$</span>{isAnnual ? '83' : '149'}<span>,{isAnnual ? '33' : '90'} /mês</span></div>
                 <div className="price-sub">{isAnnual ? 'Cobrado R$ 1.000,00 anualmente' : 'Barbeiros extras por +R$50/mês cada'}</div>
               </div>
               <ul className="pricing-features">
@@ -201,10 +201,32 @@ export default function Home() {
                   Fidelidade, Cashback e Mensagens em Massa
                 </li>
               </ul>
-              <Link href="/login" className="btn-primary" style={{ width: '100%', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.2rem', background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', border: 'none', boxShadow: '0 4px 14px 0 rgba(249, 115, 22, 0.39)', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{isAnnual ? 'Assinar Plano Anual 🏆' : 'Assinar Plano Pro Mensal'}</span>
-                  <span style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 400 }}>{isAnnual ? 'Apenas R$ 83,33/mês' : 'R$ 149,99/mês sem fidelidade'}</span>
-              </Link>
+              <button 
+                onClick={async () => {
+                   try {
+                     const res = await fetch('/api/pagamento/checkout', {
+                       method: 'POST',
+                       headers: { 'Content-Type': 'application/json' },
+                       body: JSON.stringify({
+                          barberiaId: 'novo-cliente', // Em prop real isso viria pós login
+                          email: 'comprador@email.com',
+                          name: 'Novo Dono de Barbearia',
+                          planId: isAnnual ? 'pro_anual' : 'pro_mensal'
+                       })
+                     });
+                     const data = await res.json();
+                     if (data.init_point) {
+                       window.location.href = data.init_point;
+                     }
+                   } catch (e) {
+                     alert("Erro ao redirecionar para pagamento.");
+                   }
+                }}
+                className="btn-primary" 
+                style={{ width: '100%', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.2rem', background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', border: 'none', boxShadow: '0 4px 14px 0 rgba(249, 115, 22, 0.39)', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{isAnnual ? 'Assinar Plano Anual 🏆' : 'Assinar Plano Pro Mensal'}</span>
+                  <span style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 400, color: '#fff' }}>{isAnnual ? 'Apenas R$ 83,33/mês' : 'R$ 149,90/mês sem fidelidade'}</span>
+              </button>
             </div>
           </div>
         </section>
