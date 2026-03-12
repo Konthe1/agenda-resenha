@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const renderUrl = process.env.WHATSAPP_API_URL?.trim().replace(/\/$/, "");
-    const apiKey = process.env.WHATSAPP_API_KEY?.trim();
-    const instanceName = process.env.WHATSAPP_INSTANCE_NAME || 'ResenhaBot';
+    const renderUrl = process.env.EVOLUTION_API_URL?.trim().replace(/\/$/, "");
+    const apiKey = process.env.EVOLUTION_API_KEY?.trim();
+    const instanceName = process.env.EVOLUTION_INSTANCE_NAME || 'resenha';
 
     if (!renderUrl || !apiKey) {
       return NextResponse.json({ connected: false });

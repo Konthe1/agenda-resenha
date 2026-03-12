@@ -9,8 +9,8 @@ export async function POST(req: Request) {
     }
 
     // evolution API environment configuration
-    const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'https://sua-evolution-api.com';
-    const INSTANCE_NAME = process.env.EVOLUTION_INSTANCE_NAME || 'minhainstancia';
+    const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'https://resenha-api.onrender.com';
+    const INSTANCE_NAME = process.env.EVOLUTION_INSTANCE_NAME || 'resenha';
     const API_KEY = process.env.EVOLUTION_API_KEY || 'sua_apikey';
 
     // Se a API_KEY for 'sua_apikey', sabemos que é uma simulação (sem credenciais inseridas pelo usuário ainda)

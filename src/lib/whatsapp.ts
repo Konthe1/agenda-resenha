@@ -4,10 +4,10 @@
  */
 
 // Como o Evolution API ou APIs similares como Z-API funcionam:
-// Precisamos da URL da API instalada e um TOKEN de segurança.
-const WHATSAPP_API_URL = process.env.WHATSAPP_API_URL || "http://localhost:8080";
-const WHATSAPP_INSTANCE_NAME = process.env.WHATSAPP_INSTANCE_NAME || "AgendamentoInstancia";
-const WHATSAPP_API_KEY = process.env.WHATSAPP_API_KEY || "seu-token-global-aqui";
+// Em produção, isso vira variáveis de ambiente reais do servidor Evolution (ou Z-API)
+const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || "http://localhost:8080";
+const EVOLUTION_INSTANCE_NAME = process.env.EVOLUTION_INSTANCE_NAME || 'resenha';
+const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || "seu-token-global-aqui";
 
 type WhatsAppMessagePayload = {
   number: string;
@@ -47,11 +47,11 @@ export async function sendWhatsAppMessage(phone: string, message: string) {
   };
 
   try {
-    const response = await fetch(`${WHATSAPP_API_URL}/message/sendText/${WHATSAPP_INSTANCE_NAME}`, {
+    const response = await fetch(`${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE_NAME}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': WHATSAPP_API_KEY, 
+        'apikey': EVOLUTION_API_KEY, 
       },
       body: JSON.stringify(payload),
     });
