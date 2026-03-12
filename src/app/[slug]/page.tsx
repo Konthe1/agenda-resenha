@@ -399,8 +399,12 @@ export default function BookingPage() {
                     onClick={() => setSelectedBarbeiro(barbeiro)}
                     style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '1.5rem', gap: '0.8rem', justifyContent: 'center' }}
                   >
-                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-primary) 0%, #ea580c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.8rem', color: 'white' }}>
-                      {barbeiro.foto_url || barbeiro.nome.charAt(0)}
+                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-primary) 0%, #ea580c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.8rem', color: 'white', overflow: 'hidden' }}>
+                      {barbeiro.foto_url?.startsWith('http') || barbeiro.foto_url?.startsWith('/') ? (
+                        <img src={barbeiro.foto_url} alt={barbeiro.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        barbeiro.foto_url || barbeiro.nome.charAt(0)
+                      )}
                     </div>
                     <div>
                       <h3 style={{ fontSize: '1.1rem', marginBottom: '0.2rem' }}>{barbeiro.nome}</h3>
