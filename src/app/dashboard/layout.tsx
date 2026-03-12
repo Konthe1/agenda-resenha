@@ -214,39 +214,39 @@ export default function DashboardLayout({
         </div>
 
         <nav className="sidebar-nav">
-          <Link href="/dashboard" className={`nav-item ${pathname === '/dashboard' ? 'active' : ''}`}>
+          <Link href="/dashboard" className={`nav-item ${pathname === '/dashboard' ? 'active' : ''}`} onClick={() => setIsMobileSidebarOpen(false)}>
             <span className="nav-icon">📊</span>
             <span>Visão Geral</span>
           </Link>
-          <Link href="/dashboard/agenda" className={`nav-item ${pathname === '/dashboard/agenda' ? 'active' : ''}`}>
+          <Link href="/dashboard/agenda" className={`nav-item ${pathname === '/dashboard/agenda' ? 'active' : ''}`} onClick={() => setIsMobileSidebarOpen(false)}>
             <span className="nav-icon">📅</span>
             <span>Agenda</span>
           </Link>
-          <Link href="/dashboard/clientes" className={`nav-item ${pathname === '/dashboard/clientes' ? 'active' : ''}`}>
+          <Link href="/dashboard/clientes" className={`nav-item ${pathname === '/dashboard/clientes' ? 'active' : ''}`} onClick={() => setIsMobileSidebarOpen(false)}>
             <span className="nav-icon">👥</span>
             <span>Clientes</span>
           </Link>
-          <Link href="/dashboard/financeiro" className={`nav-item ${pathname === '/dashboard/financeiro' ? 'active' : ''}`}>
+          <Link href="/dashboard/financeiro" className={`nav-item ${pathname === '/dashboard/financeiro' ? 'active' : ''}`} onClick={() => setIsMobileSidebarOpen(false)}>
             <span className="nav-icon">💰</span>
             <span>Financeiro</span>
           </Link>
-          <Link href="/dashboard/marketing" className={`nav-item ${pathname === '/dashboard/marketing' ? 'active' : ''}`}>
+          <Link href="/dashboard/marketing" className={`nav-item ${pathname === '/dashboard/marketing' ? 'active' : ''}`} onClick={() => setIsMobileSidebarOpen(false)}>
             <span className="nav-icon">🎯</span>
             <span>Marketing (PRO)</span>
           </Link>
-          <Link href="/dashboard/produtos" className={`nav-item ${pathname === '/dashboard/produtos' ? 'active' : ''}`}>
+          <Link href="/dashboard/produtos" className={`nav-item ${pathname === '/dashboard/produtos' ? 'active' : ''}`} onClick={() => setIsMobileSidebarOpen(false)}>
             <span className="nav-icon">🛍️</span>
             <span>Produtos (PRO)</span>
           </Link>
-          <Link href="/dashboard/planos" className={`nav-item ${pathname === '/dashboard/planos' ? 'active' : ''}`}>
+          <Link href="/dashboard/planos" className={`nav-item ${pathname === '/dashboard/planos' ? 'active' : ''}`} onClick={() => setIsMobileSidebarOpen(false)}>
             <span className="nav-icon">🎟️</span>
             <span>Assinaturas (PRO)</span>
           </Link>
-          <Link href="/dashboard/configuracoes" className={`nav-item ${pathname === '/dashboard/configuracoes' ? 'active' : ''}`}>
+          <Link href="/dashboard/configuracoes" className={`nav-item ${pathname === '/dashboard/configuracoes' ? 'active' : ''}`} onClick={() => setIsMobileSidebarOpen(false)}>
             <span className="nav-icon">⚙️</span>
             <span>Configurações</span>
           </Link>
-          <Link href="/docs" className="nav-item">
+          <Link href="/docs" className="nav-item" onClick={() => setIsMobileSidebarOpen(false)}>
             <span className="nav-icon">📚</span>
             <span>Ajuda / Documentação</span>
           </Link>

@@ -285,3 +285,51 @@
 .powered-by a:hover {
   text-decoration: underline;
 }
+
+/* MOBILE FIRST MEDIA QUERIES FOR BOOKING FLOW */
+@media (max-width: 480px) {
+  .booking-container {
+    padding: 1rem 0.5rem;
+  }
+  
+  .booking-card {
+    border-radius: 1rem;
+    padding: 1.5rem 1rem;
+  }
+  
+  .barbershop-logo {
+    width: 64px;
+    height: 64px;
+    font-size: 2rem;
+  }
+  
+  .calendar-grid {
+    gap: 0.25rem;
+  }
+  
+  .day-btn {
+    padding: 0.5rem 0;
+  }
+  
+  .day-number {
+    font-size: 0.9rem;
+  }
+  
+  .time-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+  }
+  
+  .time-btn {
+    padding: 0.6rem 0;
+    font-size: 0.85rem;
+  }
+  
+  .service-item {
+    padding: 0.75rem;
+  }
+  
+  .service-info h3 {
+    font-size: 0.95rem;
+  }
+}
