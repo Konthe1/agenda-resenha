@@ -307,8 +307,12 @@ export default function AgendaPage() {
                           display: 'flex', flexDirection: 'column', gap: '2px'
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                             <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--accent-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold' }}>
-                                {app.barbeiros?.foto_url || app.barbeiros?.nome?.charAt(0) || '?'}
+                             <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'var(--accent-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', overflow: 'hidden', flexShrink: 0 }}>
+                                {app.barbeiros?.foto_url?.startsWith('http') || app.barbeiros?.foto_url?.startsWith('/') ? (
+                                   <img src={app.barbeiros.foto_url} alt={app.barbeiros.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                   app.barbeiros?.foto_url || app.barbeiros?.nome?.charAt(0) || '?'
+                                )}
                              </div>
                              <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--accent-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                                 {app.clientes?.nome || 'Cliente'}

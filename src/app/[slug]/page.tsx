@@ -559,9 +559,13 @@ export default function BookingPage() {
             
             <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--bg-primary)', borderRadius: '0.5rem', fontSize: '0.9rem', border: '1px solid var(--border-color)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.8rem', paddingBottom: '0.8rem', borderBottom: '1px solid var(--border-color)' }}>
-                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-primary) 0%, #ea580c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.1rem', color: 'white' }}>
-                    {selectedBarbeiro?.foto_url || selectedBarbeiro?.nome.charAt(0)}
-                 </div>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-primary) 0%, #ea580c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.1rem', color: 'white', overflow: 'hidden' }}>
+                    {selectedBarbeiro?.foto_url?.startsWith('http') || selectedBarbeiro?.foto_url?.startsWith('/') ? (
+                        <img src={selectedBarbeiro.foto_url} alt={selectedBarbeiro.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                        selectedBarbeiro?.foto_url || selectedBarbeiro?.nome.charAt(0)
+                    )}
+                  </div>
                  <div>
                    <strong style={{ display: 'block' }}>{selectedBarbeiro?.nome}</strong>
                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Profissional Escolhido</span>
