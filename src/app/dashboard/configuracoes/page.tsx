@@ -120,19 +120,41 @@ export default function ConfiguracoesPage() {
   };
 
   const handleSavePerfil = async () => {
-     if (!barbeariaPerfil.id) return;
      setIsSubmitting(true);
      try {
-        const { error } = await supabase.from('barbearias').update({
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData.user?.id;
+        
+        const payload = {
            nome: barbeariaPerfil.nome,
            slug: barbeariaPerfil.slug,
            endereco: barbeariaPerfil.endereco,
-           logo_url: barbeariaPerfil.logo_url
-        }).eq('id', barbeariaPerfil.id);
+           logo_url: barbeariaPerfil.logo_url,
+           owner_id: userId
+        };
+
+        // Se já temos um ID, incluímos no upsert para atualizar a mesma linha.
+        const { data, error } = await supabase
+           .from('barbearias')
+           .upsert(barbeariaPerfil.id ? { ...payload, id: barbeariaPerfil.id } : payload)
+           .select()
+           .single();
         
         if (error) throw error;
+        
+        if (data) {
+           setBarbeariaPerfil({
+              id: data.id,
+              nome: data.nome || '',
+              slug: data.slug || '',
+              endereco: data.endereco || '',
+              logo_url: data.logo_url || ''
+           });
+        }
+        
         alert("Perfil da barbearia atualizado com sucesso!");
      } catch (e: any) {
+        console.error("Erro ao salvar perfil:", e);
         alert("Erro ao salvar perfil: " + e.message);
      } finally {
         setIsSubmitting(false);
@@ -148,8 +170,17 @@ export default function ConfiguracoesPage() {
         setBarbeiros(bData);
       }
       
-      // Fetch barbearia profile
-      const { data: barbData } = await supabase.from('barbearias').select('*').limit(1).single();
+      // Fetch barbearia profile (Prefer results from the logged-in user)
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      
+      let q = supabase.from('barbearias').select('*');
+      if (userId) {
+         q = q.eq('owner_id', userId);
+      }
+      
+      const { data: barbData, error: barbErr } = await q.limit(1).maybeSingle();
+      
       if (barbData) {
         setBarbeariaPerfil({
            id: barbData.id,
@@ -158,6 +189,18 @@ export default function ConfiguracoesPage() {
            endereco: barbData.endereco || '',
            logo_url: barbData.logo_url || ''
         });
+      } else if (!barbErr) {
+        // Se não encontrou nenhuma e não deu erro, tentamos a primeira barbearia global como fallback
+        const { data: globalBarb } = await supabase.from('barbearias').select('*').limit(1).maybeSingle();
+        if (globalBarb) {
+           setBarbeariaPerfil({
+              id: globalBarb.id,
+              nome: globalBarb.nome || '',
+              slug: globalBarb.slug || '',
+              endereco: globalBarb.endereco || '',
+              logo_url: globalBarb.logo_url || ''
+           });
+        }
       }
       
       // Fetch services
