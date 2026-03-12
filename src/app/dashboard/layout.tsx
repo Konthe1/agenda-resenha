@@ -194,7 +194,10 @@ export default function DashboardLayout({
 
       {/* Mobile Top Header */}
       <div className="mobile-header">
-         <span className="mobile-header-brand">Resenha<span className="accent">Admin</span></span>
+         <div className="mobile-header-brand" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <img src="/logo.png" alt="Logo" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain' }} />
+            <span>Resenha<span className="accent">Admin</span></span>
+         </div>
          <button className="mobile-menu-btn" onClick={() => setIsMobileSidebarOpen(true)}>☰</button>
       </div>
 
