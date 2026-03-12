@@ -106,7 +106,11 @@ export default function ConfiguracoesPage() {
 
       return data.publicUrl;
     } catch (error: any) {
-      alert('Erro ao fazer upload da imagem: ' + error.message);
+      if (error.message?.includes('Bucket not found') || error.error === 'Bucket not found') {
+        alert('Erro: O Bucket "barbearia-assets" não foi encontrado no Banco de Dados.\n\nPor favor, copie o código do script "setup_storage.sql" que eu criei anteriormente e rode ele no SQL Editor do seu Supabase. Isso vai criar o bucket de imagens e resolver este erro!');
+      } else {
+        alert('Erro ao fazer upload da imagem: ' + (error.message || 'Erro desconhecido.'));
+      }
       return null;
     } finally {
       setIsSubmitting(false);
@@ -164,7 +168,19 @@ export default function ConfiguracoesPage() {
       try {
         const fetchStatus = await fetch('/api/whatsapp/status');
         const st = await fetchStatus.json();
-        if (st.connected) setIsWhatsappConnected(true);
+        if (st.connected) {
+           setIsWhatsappConnected(true);
+        } else {
+           // Automatic wake up/reconnect for WhatsApp
+           const resConnect = await fetch('/api/whatsapp/connect', { method: 'POST' });
+           const dataConnect = await resConnect.json();
+           if (dataConnect.alreadyConnected) {
+              setIsWhatsappConnected(true);
+           } else if (dataConnect.qrcode) {
+              setQrCodeData(dataConnect.qrcode);
+              setQrCodeMessage("Escaneie o QR Code abaixo com o WhatsApp da Barbearia");
+           }
+        }
       } catch(e) {}
 
       setIsLoading(false);
@@ -273,23 +289,30 @@ export default function ConfiguracoesPage() {
                 
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Logo da Barbearia (Max 10MB)</label>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={async (e) => {
-                       const file = e.target.files?.[0];
-                       if (file) {
-                          const publicUrl = await uploadImageToSupabase(file);
-                          if (publicUrl) {
-                             setBarbeariaPerfil({...barbeariaPerfil, logo_url: publicUrl});
-                          }
-                       }
-                    }} 
-                    style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white' }} 
-                  />
-                  {barbeariaPerfil.logo_url && (
-                    <img src={barbeariaPerfil.logo_url} alt="Logo Preview" style={{ width: '60px', height: '60px', marginTop: '10px', borderRadius: '8px', objectFit: 'cover', background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }} />
-                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    {barbeariaPerfil.logo_url ? (
+                      <img src={barbeariaPerfil.logo_url} alt="Logo Preview" style={{ width: '80px', height: '80px', borderRadius: '12px', objectFit: 'cover', background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }} />
+                    ) : (
+                      <div style={{ width: '80px', height: '80px', borderRadius: '12px', background: 'var(--bg-primary)', border: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>✂️</div>
+                    )}
+                    <label style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-secondary)', padding: '0.6rem 1.2rem', borderRadius: '8px', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontWeight: '500', transition: 'background 0.2s' }}>
+                      <span>📷 Escolher Foto...</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={async (e) => {
+                           const file = e.target.files?.[0];
+                           if (file) {
+                              const publicUrl = await uploadImageToSupabase(file);
+                              if (publicUrl) {
+                                 setBarbeariaPerfil({...barbeariaPerfil, logo_url: publicUrl});
+                              }
+                           }
+                        }} 
+                        style={{ display: 'none' }} 
+                      />
+                    </label>
+                  </div>
                 </div>
                 
                 <div>
@@ -464,32 +487,36 @@ export default function ConfiguracoesPage() {
                 {barbeiros.map(barbeiro => (
                   <div key={barbeiro.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <div style={{ position: 'relative', width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-primary) 0%, #ea580c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem', overflow: 'hidden' }}>
-                        {barbeiro.foto_url ? (
-                           <img src={barbeiro.foto_url} alt={barbeiro.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                           barbeiro.nome.charAt(0)
-                        )}
-                        <input 
-                           type="file" 
-                           accept="image/*" 
-                           title="Alterar Foto"
-                           style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
-                           onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                 const publicUrl = await uploadImageToSupabase(file);
-                                 if (publicUrl) {
-                                    const { error } = await supabase.from('barbeiros').update({ foto_url: publicUrl }).eq('id', barbeiro.id);
-                                    if (!error) {
-                                       setBarbeiros(bList => bList.map(b => b.id === barbeiro.id ? { ...b, foto_url: publicUrl } : b));
-                                    } else {
-                                       alert("Erro ao salvar foto no banco.");
-                                    }
-                                 }
-                              }
-                           }}
-                        />
+                      <div style={{ position: 'relative' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-primary) 0%, #ea580c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem', overflow: 'hidden' }}>
+                          {barbeiro.foto_url ? (
+                             <img src={barbeiro.foto_url} alt={barbeiro.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                             barbeiro.nome.charAt(0)
+                          )}
+                        </div>
+                        <label title="Alterar Foto" style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '0.7rem', boxShadow: '0 2px 5px rgba(0,0,0,0.3)', zIndex: 2 }}>
+                          📷
+                          <input 
+                             type="file" 
+                             accept="image/*" 
+                             style={{ display: 'none' }}
+                             onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                   const publicUrl = await uploadImageToSupabase(file);
+                                   if (publicUrl) {
+                                      const { error } = await supabase.from('barbeiros').update({ foto_url: publicUrl }).eq('id', barbeiro.id);
+                                      if (!error) {
+                                         setBarbeiros(bList => bList.map(b => b.id === barbeiro.id ? { ...b, foto_url: publicUrl } : b));
+                                      } else {
+                                         alert("Erro ao salvar foto no banco.");
+                                      }
+                                   }
+                                }
+                             }}
+                          />
+                        </label>
                       </div>
                       <div>
                         <input 
