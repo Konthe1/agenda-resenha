@@ -17,8 +17,8 @@ export default function Home() {
       {/* Navbar */}
       <nav className="navbar">
         <div className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <img src="/logo.png" alt="Logo" style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'contain' }} />
-          <span style={{ fontSize: '1.5rem' }}>Agenda<span className="accent">Resenha</span></span>
+          <img src="/logo.png" alt="Logo" style={{ width: '80px', height: '80px', borderRadius: '16px', objectFit: 'contain' }} />
+          <span style={{ fontSize: '1.75rem' }}>Agenda<span className="accent">Resenha</span></span>
         </div>
         <div className="nav-links">
           <a href="#recursos" className="nav-link">Recursos</a>
@@ -35,6 +35,7 @@ export default function Home() {
       <main className="landing-content">
         {/* Hero Section */}
         <section className="hero-section animate-fade-in">
+          <img src="/logo.png" alt="Resenha Logo Oficial" style={{ width: '180px', height: '180px', borderRadius: '32px', objectFit: 'contain', margin: '0 auto 1.5rem auto', display: 'block', boxShadow: '0 10px 30px rgba(249, 115, 22, 0.2)' }} />
           <div className="badge">🚀 O Novo Padrão para Barbearias</div>
           <h1 className="hero-title">
             Profissionalize sua barbearia sem perder a <span className="highlight">essência da resenha!</span>
@@ -266,8 +267,8 @@ export default function Home() {
         <div className="footer-content">
           <div className="footer-col">
             <div className="nav-brand" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <img src="/logo.png" alt="Logo" style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'contain' }} />
-              <span style={{ fontSize: '1.5rem' }}>Agenda<span className="accent">Resenha</span></span>
+              <img src="/logo.png" alt="Logo" style={{ width: '80px', height: '80px', borderRadius: '16px', objectFit: 'contain' }} />
+              <span style={{ fontSize: '1.75rem' }}>Agenda<span className="accent">Resenha</span></span>
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.5' }}>
               O SaaS que transforma qualquer barbearia comum em uma operação moderna e lucrativa. Feito com amor por quem entende de cabelo e código.
