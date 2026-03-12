@@ -15,6 +15,7 @@ export default function ConfiguracoesPage() {
   const [barbeiros, setBarbeiros] = useState<any[]>([]);
   const [servicos, setServicos] = useState<any[]>([]);
   const [editingServiceId, setEditingServiceId] = useState<any>(null);
+  const [barbeariaPerfil, setBarbeariaPerfil] = useState({ id: '', nome: '', slug: '', endereco: '', logo_url: '' });
 
   // Modal States
   const [showServiceModal, setShowServiceModal] = useState(false);
@@ -79,6 +80,26 @@ export default function ConfiguracoesPage() {
      }
   };
 
+  const handleSavePerfil = async () => {
+     if (!barbeariaPerfil.id) return;
+     setIsSubmitting(true);
+     try {
+        const { error } = await supabase.from('barbearias').update({
+           nome: barbeariaPerfil.nome,
+           slug: barbeariaPerfil.slug,
+           endereco: barbeariaPerfil.endereco,
+           logo_url: barbeariaPerfil.logo_url
+        }).eq('id', barbeariaPerfil.id);
+        
+        if (error) throw error;
+        alert("Perfil da barbearia atualizado com sucesso!");
+     } catch (e: any) {
+        alert("Erro ao salvar perfil: " + e.message);
+     } finally {
+        setIsSubmitting(false);
+     }
+  };
+
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
@@ -86,6 +107,18 @@ export default function ConfiguracoesPage() {
       const { data: bData } = await supabase.from('barbeiros').select('*').order('nome');
       if (bData && bData.length > 0) {
         setBarbeiros(bData);
+      }
+      
+      // Fetch barbearia profile
+      const { data: barbData } = await supabase.from('barbearias').select('*').limit(1).single();
+      if (barbData) {
+        setBarbeariaPerfil({
+           id: barbData.id,
+           nome: barbData.nome || '',
+           slug: barbData.slug || '',
+           endereco: barbData.endereco || '',
+           logo_url: barbData.logo_url || ''
+        });
       }
       
       // Fetch services
@@ -142,8 +175,17 @@ export default function ConfiguracoesPage() {
           <h1>Configurações</h1>
           <p>Personalize seu sistema e dados da barbearia</p>
         </div>
-        <button className="btn-primary" style={{ padding: '0.6rem 1.25rem' }}>
-          Salvar Alterações
+        <button 
+           className="btn-primary" 
+           style={{ padding: '0.6rem 1.25rem' }} 
+           onClick={() => {
+              if (activeTab === 'perfil') handleSavePerfil();
+              else if (activeTab === 'horarios') handleSaveSchedule();
+              else alert("As edições desta aba são salvas automaticamente ou com seus próprios botões na lista abaixo.");
+           }}
+           disabled={isSubmitting || isSavingSchedule}
+        >
+          {isSubmitting || isSavingSchedule ? 'Salvando...' : 'Salvar Alterações'}
         </button>
       </div>
 
@@ -193,20 +235,28 @@ export default function ConfiguracoesPage() {
               <div style={{ display: 'grid', gap: '1.5rem' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Nome da Barbearia</label>
-                  <input type="text" defaultValue="Resenha Barber" style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white' }} />
+                  <input type="text" value={barbeariaPerfil.nome} onChange={(e) => setBarbeariaPerfil({...barbeariaPerfil, nome: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white' }} />
+                </div>
+                
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Logo URL (Link da Imagem)</label>
+                  <input type="text" placeholder="https://..." value={barbeariaPerfil.logo_url} onChange={(e) => setBarbeariaPerfil({...barbeariaPerfil, logo_url: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white' }} />
+                  {barbeariaPerfil.logo_url && (
+                    <img src={barbeariaPerfil.logo_url} alt="Logo Preview" style={{ width: '60px', height: '60px', marginTop: '10px', borderRadius: '8px', objectFit: 'contain', background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }} />
+                  )}
                 </div>
                 
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Link do Agendamento (Slug)</label>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <span style={{ padding: '0.8rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRight: 'none', borderRadius: '8px 0 0 8px', color: 'var(--text-secondary)' }}>agendaresenha.com/</span>
-                    <input type="text" defaultValue="resenhabarber" style={{ flex: 1, padding: '0.8rem', borderRadius: '0 8px 8px 0', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} />
+                    <input type="text" value={barbeariaPerfil.slug} onChange={(e) => setBarbeariaPerfil({...barbeariaPerfil, slug: e.target.value})} style={{ flex: 1, padding: '0.8rem', borderRadius: '0 8px 8px 0', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }} />
                   </div>
                 </div>
 
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Endereço Completo</label>
-                  <input type="text" placeholder="Rua, Número, Bairro, Cidade" style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white' }} />
+                  <input type="text" placeholder="Rua, Número, Bairro, Cidade" value={barbeariaPerfil.endereco} onChange={(e) => setBarbeariaPerfil({...barbeariaPerfil, endereco: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white' }} />
                 </div>
               </div>
             </div>

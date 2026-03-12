@@ -256,10 +256,10 @@ export default function AgendaPage() {
       </div>
 
       {/* CALENDAR GRID */}
-      <div className="section-card calendar-container" style={{ flex: 1, overflowY: 'auto', padding: '0', display: 'flex', flexDirection: 'column' }}>
+      <div className="section-card calendar-container" style={{ flex: 1, overflow: 'auto', padding: '0', display: 'flex', flexDirection: 'column' }}>
         
         {/* Cabecalho Dias */}
-        <div style={{ display: 'grid', gridTemplateColumns: '60px repeat(7, 1fr)', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)', position: 'sticky', top: 0, zIndex: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '60px repeat(7, 1fr)', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)', position: 'sticky', top: 0, zIndex: 10, minWidth: '700px' }}>
           <div style={{ padding: '10px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>GMT-3</div>
           {weekDays.map((day, idx) => (
             <div key={idx} style={{ padding: '10px', textAlign: 'center', borderLeft: '1px solid var(--border-color)' }}>
@@ -274,7 +274,7 @@ export default function AgendaPage() {
         {/* Corpo Horarios */}
         <div style={{ position: 'relative', flex: 1 }}>
           {HOURS.map(hour => (
-            <div key={hour} style={{ display: 'grid', gridTemplateColumns: '60px repeat(7, 1fr)', minHeight: '60px' }}>
+            <div key={hour} style={{ display: 'grid', gridTemplateColumns: '60px repeat(7, 1fr)', minHeight: '60px', minWidth: '700px' }}>
               
               {/* Coluna de Hora */}
               <div style={{ padding: '10px 5px', textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-secondary)', transform: 'translateY(-10px)' }}>

@@ -5,12 +5,12 @@ import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import "./booking.css";
 
-// --- Types ---
 type Barbearia = {
   id: string;
   nome: string;
   logo_url: string | null;
   cor_primaria: string | null;
+  endereco: string | null;
 };
 
 type Barbeiro = {
@@ -75,7 +75,8 @@ export default function BookingPage() {
             id: '1',
             nome: 'Resenha Barber',
             logo_url: '/logo.png',
-            cor_primaria: '#F97316'
+            cor_primaria: '#F97316',
+            endereco: 'Rua Principal, 123 - Centro'
           };
           setBarbearia(activeBarbearia);
         } else {
@@ -369,12 +370,17 @@ export default function BookingPage() {
         {step !== 5 && (
           <div className="barbershop-header">
             {barbearia.logo_url ? (
-              <img src={barbearia.logo_url} alt={barbearia.nome} className="barbershop-logo" />
+              <img src={barbearia.logo_url} alt={barbearia.nome} className="barbershop-logo" style={{ objectFit: 'cover' }} />
             ) : (
               <div className="barbershop-logo">✂️</div>
             )}
             <h1>{barbearia.nome || 'Minha Barbearia'}</h1>
-            <p>Selecione abaixo o que você deseja</p>
+            {barbearia.endereco && (
+              <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.85rem', marginTop: '0.25rem', opacity: 0.9 }}>
+                📍 {barbearia.endereco}
+              </p>
+            )}
+            <p style={{ marginTop: barbearia.endereco ? '0.75rem' : '0' }}>Selecione abaixo o que você deseja</p>
           </div>
         )}
 

@@ -416,6 +416,18 @@
   display: none;
 }
 
+.planos-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) 2fr;
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .planos-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 480px) {
   .metrics-grid {
     grid-template-columns: 1fr;

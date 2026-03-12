@@ -108,7 +108,7 @@ export default function PlanosPage() {
         <button className="btn-primary" style={{ padding: '0.6rem 1.25rem' }} onClick={() => setIsPlanoModalOpen(true)}>+ Novo Plano</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 2fr', gap: '2rem' }}>
+      <div className="planos-grid">
         {/* Gerenciamento de Modalidades */}
         <div className="section-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <h2>Seus Pacotes</h2>
