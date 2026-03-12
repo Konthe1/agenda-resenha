@@ -536,7 +536,6 @@ export default function ConfiguracoesPage() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <button className="btn-text" style={{ padding: '0.5rem', color: 'var(--text-secondary)' }} title="Horários de Trabalho">⏰</button>
                       <button 
                         className="btn-text" 
                         style={{ padding: '0.5rem', color: 'var(--accent-primary)' }} 
