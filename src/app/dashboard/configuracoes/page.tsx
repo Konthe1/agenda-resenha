@@ -438,23 +438,23 @@ export default function ConfiguracoesPage() {
               🧔 Equipe e Barbeiros
             </button>
             <button 
-             className={`tab-btn ${activeTab === 'horarios' ? 'active' : ''}`}
-             onClick={() => setActiveTab('horarios')}
-          >
-            ⏰ Horários
-          </button>
-          <button 
-             className={`tab-btn ${activeTab === 'audios' ? 'active' : ''}`}
-             onClick={() => setActiveTab('audios')}
-          >
-            🎤 Áudios (Novo!)
-          </button>
-          <button 
-             className={`tab-btn ${activeTab === 'whatsapp' ? 'active' : ''}`}
-             onClick={() => setActiveTab('whatsapp')}
-          >
-            🤖 WhatsApp
-          </button>
+              onClick={() => setActiveTab("horarios")}
+              style={{ padding: '1rem 1.5rem', textAlign: 'left', background: activeTab === 'horarios' ? 'var(--bg-secondary)' : 'transparent', border: 'none', color: activeTab === 'horarios' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'horarios' ? '600' : '400', cursor: 'pointer', borderLeft: activeTab === 'horarios' ? '3px solid var(--accent-primary)' : '3px solid transparent' }}
+            >
+              ⏰ Horários de Funcionamento
+            </button>
+            <button 
+              onClick={() => setActiveTab("audios")}
+              style={{ padding: '1rem 1.5rem', textAlign: 'left', background: activeTab === 'audios' ? 'var(--bg-secondary)' : 'transparent', border: 'none', color: activeTab === 'audios' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'audios' ? '600' : '400', cursor: 'pointer', borderLeft: activeTab === 'audios' ? '3px solid var(--accent-primary)' : '3px solid transparent' }}
+            >
+              🎤 Áudios (Novo!)
+            </button>
+            <button 
+              onClick={() => setActiveTab("whatsapp")}
+              style={{ padding: '1rem 1.5rem', textAlign: 'left', background: activeTab === 'whatsapp' ? 'var(--bg-secondary)' : 'transparent', border: 'none', color: activeTab === 'whatsapp' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'whatsapp' ? '600' : '400', cursor: 'pointer', borderLeft: activeTab === 'whatsapp' ? '3px solid var(--accent-primary)' : '3px solid transparent' }}
+            >
+              🤖 Integrações (WhatsApp)
+            </button>
           </div>
         </div>
 
