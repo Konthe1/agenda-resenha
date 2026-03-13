@@ -29,42 +29,79 @@ export default function ProdutosPage() {
     async function loadInitialData() {
       setIsLoading(true);
       try {
-        // 1. Buscar o usuário logado
-        const { data: { user } } = await supabase.auth.getUser();
+        console.log("Iniciando carregamento de dados do Produto...");
+        
+        // 1. Tentar pegar o usuário logado
+        const { data: sessionData } = await supabase.auth.getSession();
+        const user = sessionData?.session?.user;
+        
+        let barbearia = null;
+
         if (user) {
-          // 2. Buscar a barbearia deste usuário (SaaS Mode)
-          let { data: barbearia, error } = await supabase
+          console.log("Usuário identificado:", user.id);
+          // 2. Buscar a barbearia deste usuário
+          const { data: barbOwner } = await supabase
             .from('barbearias')
             .select('id')
             .eq('owner_id', user.id)
             .maybeSingle();
-          
-          // Fallback: Se não encontrou pelo owner_id, tenta pegar a primeira barbearia do sistema (Demo Mode/Fix)
-          if (!barbearia) {
-            const { data: firstBarb } = await supabase
-              .from('barbearias')
-              .select('id')
-              .limit(1)
-              .maybeSingle();
-            barbearia = firstBarb;
-          }
+          barbearia = barbOwner;
+        }
 
-          if (barbearia) {
-            setBarbeariaId(barbearia.id);
-            // 3. Buscar produtos
-            const { data: prods } = await supabase
-              .from('produtos')
-              .select('*')
-              .eq('barbearia_id', barbearia.id)
-              .order('nome');
-            
-            if (prods) setProdutos(prods);
+        // 3. Fallback 1: Se não encontrou pelo owner_id (ou não logado), tenta pegar a PRIMEIRA barbearia do banco
+        if (!barbearia) {
+          console.log("Buscando qualquer barbearia como fallback...");
+          const { data: firstBarb } = await supabase
+            .from('barbearias')
+            .select('id')
+            .limit(1)
+            .maybeSingle();
+          barbearia = firstBarb;
+        }
+
+        // 4. Fallback 2: Se ATE AGORA for null, a tabela barbearias está VAZIA. 
+        // Vamos tentar criar uma padrão para o usuário logado não travar.
+        if (!barbearia && user) {
+          console.log("Criando barbearia padrão...");
+          const { data: newBarb, error: createErr } = await supabase
+            .from('barbearias')
+            .insert({ 
+              nome: 'Minha Barbearia', 
+              owner_id: user.id,
+              slug: 'barbearia-' + Math.floor(Math.random() * 1000)
+            })
+            .select('id')
+            .single();
+          
+          if (!createErr) {
+            barbearia = newBarb;
+            console.log("Barbearia padrão criada com ID:", barbearia?.id);
           } else {
-            console.warn("Nenhuma barbearia encontrada para o usuário ou no sistema.");
+            console.error("Erro ao criar barbearia padrão:", createErr);
           }
         }
+
+        if (barbearia) {
+          console.log("Barbearia ID definido:", barbearia.id);
+          setBarbeariaId(barbearia.id);
+          
+          // 3. Buscar produtos
+          const { data: prods, error: prodsErr } = await supabase
+            .from('produtos')
+            .select('*')
+            .eq('barbearia_id', barbearia.id)
+            .order('nome');
+          
+          if (prodsErr) console.error("Erro ao buscar produtos:", prodsErr);
+          if (prods) {
+            console.log(`${prods.length} produtos carregados.`);
+            setProdutos(prods);
+          }
+        } else {
+          console.error("FALHA CRÍTICA: Nenhuma barbearia encontrada ou criada.");
+        }
       } catch (err) {
-        console.error("Erro ao carregar dados iniciais:", err);
+        console.error("Erro fatal no loadInitialData:", err);
       } finally {
         setIsLoading(false);
       }
@@ -379,13 +416,9 @@ export default function ProdutosPage() {
                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Estoque Mínimo (Alerta)</label>
                        <input type="number" value={formData.estoque_minimo} onChange={e => setFormData({...formData, estoque_minimo: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white' }} />
                     </div>
-                    <div>
+                    <div style={{ gridColumn: '1 / -1' }}>
                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Categoria</label>
                        <input type="text" value={formData.categoria} onChange={e => setFormData({...formData, categoria: e.target.value})} placeholder="Cabelo, Barba, etc" style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white' }} />
-                    </div>
-                    <div>
-                       <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Cód. Barras/SKU</label>
-                       <input type="text" value={formData.codigo_barras} onChange={e => setFormData({...formData, codigo_barras: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white' }} />
                     </div>
                  </div>
 
