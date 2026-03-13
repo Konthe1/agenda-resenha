@@ -46,16 +46,16 @@ export default function DashboardLayout({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // 1. Tentar buscar pelo owner_id (Priorizando PRO se houver duplicatas por erro)
-      let { data, error } = await supabase
+      // 1. Tentar buscar pelo owner_id (Priorizando PRO se houver duplicatas)
+      let { data } = await supabase
         .from('barbearias')
         .select('id, nome, logo_url, plano, endereco, whatsapp')
         .eq('owner_id', user.id)
-        .order('plano', { ascending: false }) // Prioriza 'PRO' sobre 'FREE'
+        .order('plano', { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      // 2. Fallback: buscar qualquer barbearia (para demos ou novos usuários ainda não vinculados)
+      // 2. Fallback: buscar qualquer barbearia
       if (!data) {
         const { data: fallbackData } = await supabase
           .from('barbearias')
@@ -72,25 +72,30 @@ export default function DashboardLayout({
           nome: data.nome || 'Resenha Barber',
           logo_url: data.logo_url || '',
           plano: (data.plano || 'FREE').toUpperCase(),
-          endereco: data.endereco,
-          whatsapp: data.whatsapp
+          endereco: data.endereco || '',
+          whatsapp: data.whatsapp || ''
         });
+      } else {
+        // 3. Fallback Total: Dados do Auth se a tabela estiver vazia
+        setBarbeariaPerfil({
+          id: 'new',
+          nome: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Resenha Barber',
+          logo_url: '',
+          plano: (user.email === 'vampiro.cd7@gmail.com') ? 'PRO' : 'FREE',
+          endereco: '',
+          whatsapp: ''
+        });
+      }
 
-        // 3. Sincronização e Despertar do WhatsApp (REALTIME)
-        try {
-          // Chamada que "acorda" a instância e retorna o status atual
-          const resSt = await fetch('/api/whatsapp/status');
-          const stData = await resSt.json();
-          
-          if (stData.connected && stData.number) {
-            setBarbeariaPerfil(prev => ({
-              ...prev,
-              whatsapp: stData.number // Número que está REALMENTE conectado no QR Code
-            }));
-          }
-        } catch (e) {
-          console.error("Erro ao despertar WhatsApp no início:", e);
+      // 4. Sincronização WhatsApp (Independente de onde veio o dado)
+      try {
+        const resSt = await fetch('/api/whatsapp/status');
+        const stData = await resSt.json();
+        if (stData.connected && stData.number) {
+          setBarbeariaPerfil(prev => ({ ...prev, whatsapp: stData.number }));
         }
+      } catch (e) {
+        console.error("Erro ao despertar WhatsApp:", e);
       }
     }
     fetchBarbearia();
