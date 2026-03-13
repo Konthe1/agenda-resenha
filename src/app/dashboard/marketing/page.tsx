@@ -248,7 +248,11 @@ export default function MarketingPage() {
                     gap: '8px'
                   }}
                 >
-                  {settings.fidelidade_ativa ? '● Ativo' : '○               <div className="metrics-grid" style={{ marginBottom: '2rem' }}>
+                  {settings.fidelidade_ativa ? '● Ativo' : '○ Inativo'}
+                </button>
+              </div>
+              
+              <div className="metrics-grid" style={{ marginBottom: '2rem' }}>
                 <div className="metric-card" style={{ background: 'var(--bg-secondary)', borderLeft: '4px solid var(--accent-primary)' }}>
                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Clientes no Programa</div>
                    <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{totalClientes}</div>
@@ -261,7 +265,9 @@ export default function MarketingPage() {
                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Prêmios Resgatados</div>
                    <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>0</div>
                 </div>
-              </div>, marginBottom: '1.5rem', opacity: settings.fidelidade_ativa ? 1 : 0.6 }}>
+              </div>
+
+              <div className="section-card" style={{ background: 'var(--bg-secondary)', marginBottom: '1.5rem', opacity: settings.fidelidade_ativa ? 1 : 0.6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <h3 style={{ fontSize: '1.1rem' }}>Regra de Recompensa</h3>
                   {!isEditingRule ? (
