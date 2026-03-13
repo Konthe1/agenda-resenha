@@ -814,7 +814,111 @@ export default function ConfiguracoesPage() {
             </div>
           )}
 
-          {activeTab === 'integracoes' && (
+          {activeTab === 'audios' && (
+            <div>
+              <h2 style={{ marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>Áudios Personalizados</h2>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+                Grave mensagens de voz que serão enviadas automaticamente para seus clientes em momentos chave.
+              </p>
+
+              <div className="section-card" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', marginBottom: '2rem' }}>
+                <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>🎙️ Novo Áudio</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Profissional (Barbeiro)</label>
+                    <select 
+                      value={newAudioData.barbeiro_id} 
+                      onChange={(e) => setNewAudioData({...newAudioData, barbeiro_id: e.target.value})}
+                      style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }}
+                    >
+                      <option value="">Selecione...</option>
+                      {barbeiros.map(b => (
+                        <option key={b.id} value={b.id}>{b.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Gatilho (Quando enviar?)</label>
+                    <select 
+                      value={newAudioData.gatilho} 
+                      onChange={(e) => setNewAudioData({...newAudioData, gatilho: e.target.value})}
+                      style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }}
+                    >
+                      <option value="confirmacao">Ao Confirmar Agendamento</option>
+                      <option value="lembrete_30min">Lembrete (30 min antes)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Cliente Específico (Opcional)</label>
+                    <select 
+                      value={newAudioData.cliente_id} 
+                      onChange={(e) => setNewAudioData({...newAudioData, cliente_id: e.target.value})}
+                      style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white' }}
+                    >
+                      <option value="">Todos os Clientes</option>
+                      {clientes.map(c => (
+                        <option key={c.id} value={c.id}>{c.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '2rem', background: 'var(--bg-primary)', borderRadius: '12px', border: '1px dashed var(--border-color)' }}>
+                  {isRecording ? (
+                    <>
+                      <div className="recording-indicator" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', fontWeight: 'bold' }}>
+                        <span style={{ width: '12px', height: '12px', background: '#ef4444', borderRadius: '50%', animation: 'pulse 1s infinite' }}></span>
+                        GRAVANDO...
+                      </div>
+                      <button onClick={stopRecording} className="btn-primary" style={{ background: '#ef4444', padding: '1rem 2rem', borderRadius: '50px' }}>
+                        ⏹️ Parar e Salvar
+                      </button>
+                    </>
+                  ) : (
+                    <button onClick={startRecording} className="btn-primary" style={{ padding: '1rem 2.5rem', borderRadius: '50px' }}>
+                      🎤 Iniciar Gravação
+                    </button>
+                  )}
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    Ao clicar em salvar, o áudio será enviado para o servidor e vinculado às regras acima.
+                  </p>
+                </div>
+              </div>
+
+              <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>📁 Áudios Salvos</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {personalizedAudios.map(audio => (
+                  <div key={audio.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', flex: 1 }}>
+                       <div style={{ minWidth: '150px' }}>
+                          <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Barbeiro</span>
+                          <span style={{ fontWeight: 'bold' }}>{audio.barbeiros?.nome || '???'}</span>
+                       </div>
+                       <div style={{ minWidth: '120px' }}>
+                          <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Gatilho</span>
+                          <span style={{ color: 'var(--accent-primary)', fontWeight: '500' }}>{audio.gatilho === 'confirmacao' ? '✅ Confirmação' : '⏰ 30 min antes'}</span>
+                       </div>
+                       <div style={{ minWidth: '150px' }}>
+                          <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Cliente</span>
+                          <span>{audio.clientes?.nome || '🌎 Todos'}</span>
+                       </div>
+                       <div style={{ flex: 1, minWidth: '200px' }}>
+                          <audio src={audio.audio_url} controls style={{ height: '32px', width: '100%', maxWidth: '300px' }} />
+                       </div>
+                    </div>
+                    <button onClick={() => handleDeleteAudio(audio.id)} style={{ color: '#ef4444', padding: '0.5rem', cursor: 'pointer', background: 'transparent' }}>🗑️</button>
+                  </div>
+                ))}
+                {personalizedAudios.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px dashed var(--border-color)' }}>
+                    Nenhum áudio personalizado gravado ainda.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'whatsapp' && (
             <div>
               <h2 style={{ marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>Robô de WhatsApp</h2>
               
@@ -914,6 +1018,22 @@ export default function ConfiguracoesPage() {
                     style={{ width: '100%', height: '100px', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', resize: 'vertical' }}
                     defaultValue="Fala {{cliente}}! Sua assinatura do plano {{plano}} foi renovada com sucesso! Você tem {{cortes_restantes}} cortes pra usar esse mês. Bora marcar? 🚀"
                   />
+                </div>
+
+                {/* Template 5 - Cancelamento */}
+                <div style={{ background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h4 style={{ fontSize: '1.1rem' }}>❌ Agendamento Cancelado</h4>
+                    <label className="switch">
+                      <input type="checkbox" defaultChecked />
+                      <span className="slider round"></span>
+                    </label>
+                  </div>
+                  <textarea 
+                    style={{ width: '100%', height: '100px', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', resize: 'vertical' }}
+                    defaultValue="Poxa {{cliente}}, seu agendamento para {{data}} foi cancelado conforme solicitado. Esperamos te ver em breve! 🤜🤛"
+                  />
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Disparado quando você ou o cliente cancelam um horário.</p>
                 </div>
               </div>
             </div>
