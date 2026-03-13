@@ -43,9 +43,7 @@ export default function MarketingPage() {
         let barbearia = null;
 
         if (user) {
-          // --- EMERGENCIA: Fallback Imediato ---
-          setPlano((user.email === 'vampiro.cd7@gmail.com') ? 'PRO' : 'FREE');
-          console.log("Marketing: Usuário identificado:", user.email);
+
 
           // 1. Tentar buscar pelo owner_id
           const { data: barbOwner } = await supabase
@@ -71,7 +69,7 @@ export default function MarketingPage() {
 
         if (barbearia) {
           setBarbeariaId(barbearia.id);
-          setPlano(user?.email === 'vampiro.cd7@gmail.com' ? 'PRO' : (barbearia.plano || 'FREE').toUpperCase());
+          setPlano((barbearia.plano || 'FREE').toUpperCase());
           setSettings({
             fidelidade_ativa: barbearia.fidelidade_ativa ?? true,
             fidelidade_cortes: barbearia.fidelidade_cortes ?? 10,

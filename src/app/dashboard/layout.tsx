@@ -53,15 +53,7 @@ export default function DashboardLayout({
           return;
         }
 
-        // --- EMERGENCIA: Fallback Imediato para remover 'Carregando...' ---
-        setBarbeariaPerfil({
-          id: 'temp',
-          nome: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Resenha Barber',
-          logo_url: '',
-          plano: (user?.email === 'vampiro.cd7@gmail.com') ? 'PRO' : 'FREE',
-          endereco: '',
-          whatsapp: ''
-        });
+
 
         console.log("Layout: Usuário logado:", user?.email);
 
@@ -96,23 +88,39 @@ export default function DashboardLayout({
             id: data.id,
             nome: data.nome || 'Resenha Barber',
             logo_url: data.logo_url || '',
-            plano: (user?.email === 'vampiro.cd7@gmail.com' ? 'PRO' : (data.plano || 'FREE').toUpperCase()),
+            plano: (data.plano || 'FREE').toUpperCase(),
             endereco: data.endereco || '',
             whatsapp: data.whatsapp || ''
           });
         }
 
-        // 4. Sincronização WhatsApp
+        // 4. Sincronização e Despertar WhatsApp
         try {
           const resSt = await fetch('/api/whatsapp/status');
           if (resSt.ok) {
             const stData = await resSt.json();
+            
+            // Se estiver conectado, puxamos o número real da API Evolution
             if (stData.connected && stData.number) {
+              console.log("Layout: WhatsApp conectado na API:", stData.number);
               setBarbeariaPerfil(prev => ({ ...prev, whatsapp: stData.number }));
+
+              // Se o número da API for diferente do que está no banco, atualizamos o banco para manter a sincronia real
+              if (data && stData.number !== data.whatsapp) {
+                console.log("Layout: Atualizando número do WhatsApp no banco de dados para:", stData.number);
+                await supabase
+                  .from('barbearias')
+                  .update({ whatsapp: stData.number })
+                  .eq('id', data.id);
+              }
+            } else if (stData.state === 'close' || !stData.connected) {
+              // Se estiver fechado, tentamos um "despertar" silencioso via connect
+              console.log("Layout: WhatsApp desconectado ou em standby, tentando despertar...");
+              fetch('/api/whatsapp/connect', { method: 'POST' }).catch(err => console.error("Erro ao despertar bot:", err));
             }
           }
         } catch (e) {
-          console.error("Layout: Erro ao despertar WhatsApp:", e);
+          console.error("Layout: Erro ao sincronizar WhatsApp:", e);
         }
       } catch (error) {
         console.error("Layout: Erro crítico em fetchBarbearia:", error);

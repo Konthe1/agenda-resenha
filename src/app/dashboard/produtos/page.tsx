@@ -37,9 +37,7 @@ export default function ProdutosPage() {
         
         let barbearia = null;
         if (user) {
-          // --- EMERGENCIA: Fallback Imediato ---
-          setPlano((user.email === 'vampiro.cd7@gmail.com') ? 'PRO' : 'FREE');
-          console.log("Produtos: Usuário identificado:", user.email);
+
           // 2. Buscar a barbearia deste usuário
           let { data: barbOwner, error: dbError } = await supabase
             .from('barbearias')
@@ -70,7 +68,7 @@ export default function ProdutosPage() {
         if (barbearia) {
           console.log("Produtos: Barbearia carregada. Plano:", barbearia.plano);
           setBarbeariaId(barbearia.id);
-          setPlano(user?.email === 'vampiro.cd7@gmail.com' ? 'PRO' : (barbearia.plano || 'FREE').toUpperCase());
+          setPlano((barbearia.plano || 'FREE').toUpperCase());
           
           // 3. Buscar produtos
           const { data: prods, error: prodsErr } = await supabase
@@ -86,7 +84,7 @@ export default function ProdutosPage() {
           }
         } else {
           console.log("Produtos: Nenhuma barbearia encontrada no sistema.");
-          setPlano(user?.email === 'vampiro.cd7@gmail.com' ? 'PRO' : 'FREE');
+          setPlano('FREE');
         }
         // 4. Fallback 2: Se ATE AGORA for null, a tabela barbearias está VAZIA. 
         // Vamos tentar criar uma padrão para o usuário logado não travar.
