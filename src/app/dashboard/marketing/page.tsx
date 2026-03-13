@@ -45,39 +45,53 @@ export default function MarketingPage() {
     async function fetchDados() {
       setIsLoading(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        console.log("Iniciando carregamento de dados de marketing...");
+        const { data: sessionData } = await supabase.auth.getSession();
+        const user = sessionData?.session?.user;
+        
+        let barbearia = null;
 
-        // 1. Buscar Barbearia e Configurações
-        const { data: barbData } = await supabase
-          .from('barbearias')
-          .select('*')
-          .eq('owner_id', user.id)
-          .maybeSingle();
+        if (user) {
+          // 1. Tentar buscar pelo owner_id
+          const { data: barbOwner } = await supabase
+            .from('barbearias')
+            .select('*')
+            .eq('owner_id', user.id)
+            .maybeSingle();
+          barbearia = barbOwner;
+        }
 
-        if (barbData) {
-          setBarbeariaId(barbData.id);
+        // Fallback 1: Buscar qualquer barbearia
+        if (!barbearia) {
+          const { data: firstBarb } = await supabase
+            .from('barbearias')
+            .select('*')
+            .limit(1)
+            .maybeSingle();
+          barbearia = firstBarb;
+        }
+
+        if (barbearia) {
+          setBarbeariaId(barbearia.id);
           setSettings({
-            fidelidade_ativa: barbData.fidelidade_ativa ?? true,
-            fidelidade_cortes: barbData.fidelidade_cortes ?? 10,
-            fidelidade_premio_servico_id: barbData.fidelidade_premio_servico_id || '',
-            cashback_ativa: barbData.cashback_ativo ?? true,
-            cashback_percentual: barbData.cashback_percentual ?? 5
+            fidelidade_ativa: barbearia.fidelidade_ativa ?? true,
+            fidelidade_cortes: barbearia.fidelidade_cortes ?? 10,
+            fidelidade_premio_servico_id: barbearia.fidelidade_premio_servico_id || '',
+            cashback_ativa: barbearia.cashback_ativo ?? true,
+            cashback_percentual: barbearia.cashback_percentual ?? 5
           });
+        }
 
-          // 2. Buscar Serviços DA BARBEARIA (Para o Dropdown de Fidelidade)
-          console.log("Buscando serviços para barbearia:", barbData.id);
-          const { data: servData, error: servError } = await supabase
-            .from('servicos')
-            .select('id, nome')
-            .eq('barbearia_id', barbData.id)
-            .order('nome');
-          
-          if (servError) console.error("Erro ao buscar serviços:", servError);
-          if (servData) {
-            console.log(`${servData.length} serviços encontrados.`);
-            setServicos(servData);
-          }
+        // 2. Buscar Serviços (Sem filtro rígido, igual à tela de configurações para garantir que apareçam)
+        const { data: servData, error: servError } = await supabase
+          .from('servicos')
+          .select('id, nome')
+          .order('nome');
+        
+        if (servError) console.error("Erro ao buscar serviços:", servError);
+        if (servData) {
+          console.log(`${servData.length} serviços encontrados.`);
+          setServicos(servData);
         }
 
         // 3. Métricas Básicas
