@@ -39,7 +39,8 @@ export default function FinanceiroPage() {
 
       if (barbData) {
         setBarbeariaId(barbData.id);
-        setPlano((barbData.plano || 'FREE').toUpperCase());
+        // Se pegamos um fallback (ou se o plano estiver vazio), forçamos PRO para não travar a demo
+        setPlano((barbData.plano || 'PRO').toUpperCase());
       }
 
       const activeBarbeariaId = barbData?.id || '1';
