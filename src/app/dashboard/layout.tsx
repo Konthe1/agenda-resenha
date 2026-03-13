@@ -49,7 +49,7 @@ export default function DashboardLayout({
       // 1. Tentar buscar pelo owner_id (Priorizando PRO se houver duplicatas por erro)
       let { data, error } = await supabase
         .from('barbearias')
-        .select('nome, logo_url, plano, endereco, whatsapp')
+        .select('id, nome, logo_url, plano, endereco, whatsapp')
         .eq('owner_id', user.id)
         .order('plano', { ascending: false }) // Prioriza 'PRO' sobre 'FREE'
         .limit(1)
