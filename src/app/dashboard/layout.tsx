@@ -33,9 +33,9 @@ export default function DashboardLayout({
   const [isProcessing, setIsProcessing] = useState(false);
   const [barbeariaPerfil, setBarbeariaPerfil] = useState({
     id: '',
-    nome: 'Resenha Barber',
+    nome: 'Carregando...',
     logo_url: '',
-    plano: 'PRO',
+    plano: 'FREE',
     endereco: '',
     whatsapp: ''
   });
@@ -76,18 +76,20 @@ export default function DashboardLayout({
           whatsapp: data.whatsapp
         });
 
-        // 3. Opcional: Tentar pegar o número REAL conectado no WhatsApp de forma reativa
+        // 3. Sincronização e Despertar do WhatsApp (REALTIME)
         try {
+          // Chamada que "acorda" a instância e retorna o status atual
           const resSt = await fetch('/api/whatsapp/status');
           const stData = await resSt.json();
+          
           if (stData.connected && stData.number) {
             setBarbeariaPerfil(prev => ({
               ...prev,
-              whatsapp: stData.number // Prioriza o número que está REALMENTE conectado
+              whatsapp: stData.number // Número que está REALMENTE conectado no QR Code
             }));
           }
         } catch (e) {
-          console.error("Erro ao sincronizar número do WhatsApp:", e);
+          console.error("Erro ao despertar WhatsApp no início:", e);
         }
       }
     }

@@ -71,13 +71,8 @@ export default function AgendaPage() {
            setBarbeiros(bData);
            setNovoBarbeiroId(bData[0].id);
         } else {
-           const mockBarbeiros = [
-             { id: '1', nome: 'Marcos (Chefe)', especialidade: 'Fade e Tesoura', foto_url: 'M' },
-             { id: '2', nome: 'Thiago', especialidade: 'Barba e Sobrancelha', foto_url: 'T' },
-             { id: '3', nome: 'Lucas', especialidade: 'Degradê e Freestyle', foto_url: 'L' },
-           ];
-           setBarbeiros(mockBarbeiros);
-           setNovoBarbeiroId(mockBarbeiros[0].id);
+           setBarbeiros([]);
+           setNovoBarbeiroId('');
         }
 
         const { data } = await supabase

@@ -29,18 +29,8 @@ export default function MarketingPage() {
   const [isEditingRule, setIsEditingRule] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  // Mock Data for UI demonstration
-  const [ranking, setRanking] = useState([
-    { id: 1, nome: "João Silva", telefone: "11999999999", cortes: 8, pontos: 80, proxPremio: "2 cortes" },
-    { id: 2, nome: "Carlos Eduardo", telefone: "11988888888", cortes: 5, pontos: 50, proxPremio: "5 cortes" },
-    { id: 3, nome: "Marcos Lima", telefone: "11977777777", cortes: 3, pontos: 30, proxPremio: "7 cortes" }
-  ]);
-  
-  const [cashbacks, setCashbacks] = useState([
-    { id: 1, data: "10/03/2026", cliente: "João Silva", valorAplicado: 4.50, status: "Aguardando Resgate" },
-    { id: 2, data: "08/03/2026", cliente: "Pedro Alves", valorAplicado: 7.00, status: "Aguardando Resgate" },
-    { id: 3, data: "01/03/2026", cliente: "Carlos Eduardo", valorAplicado: 3.50, status: "Resgatado" }
-  ]);
+  const [ranking, setRanking] = useState<any[]>([]);
+  const [cashbacks, setCashbacks] = useState<any[]>([]);
 
   useEffect(() => {
     async function fetchDados() {
@@ -103,7 +93,7 @@ export default function MarketingPage() {
         const { count } = await supabase.from('clientes').select('*', { count: 'exact', head: true });
         if (count) {
           setTotalClientes(count);
-          setInativosCount(Math.floor(count * 0.7) || 1);
+          setInativosCount(0); // Será real quando implementarmos a query de inativos
         }
       } catch (error) {
         console.error("Erro ao carregar dados de marketing:", error);
@@ -262,18 +252,17 @@ export default function MarketingPage() {
                 </button>
               </div>
               
-              <div className="metrics-grid" style={{ marginBottom: '2rem' }}>
-                <div className="metric-card" style={{ background: 'var(--bg-secondary)', borderLeft: '4px solid var(--accent-primary)' }}>
+                       <div className="metric-card" style={{ background: 'var(--bg-secondary)', borderLeft: '4px solid var(--accent-primary)' }}>
                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Clientes no Programa</div>
-                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{totalClientes > 0 ? totalClientes : 124}</div>
+                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{totalClientes}</div>
                 </div>
                 <div className="metric-card" style={{ background: 'var(--bg-secondary)', borderLeft: '4px solid #10b981' }}>
                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Cortes Faltando (Média)</div>
-                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>4.2</div>
+                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>0</div>
                 </div>
                 <div className="metric-card" style={{ background: 'var(--bg-secondary)', borderLeft: '4px solid #f59e0b' }}>
                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Prêmios Resgatados</div>
-                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>28</div>
+                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>0</div>
                 </div>
               </div>
 

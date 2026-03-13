@@ -55,16 +55,16 @@ export default function DashboardOverview() {
           .order('data_hora_inicio', { ascending: true })
           .limit(5);
 
-        if (apps && apps.length > 0) {
+        if (apps) {
           setAppointments(apps);
-          setMetrics({ agendamentos: apps.length, faturamento: apps.length * 50, novos: 1 });
-        } else {
-          // Fallback to Mock if DB empty to keep UI looking good for user
-          setMetrics({ agendamentos: 14, faturamento: 840, novos: 3 });
-          setAppointments([
-             { clientes: { nome: 'Lucas Tavares' }, servicos: { nome: 'Corte + Barba' }, data_hora_inicio: new Date().toISOString() },
-             { clientes: { nome: 'Rafael Silva' }, servicos: { nome: 'Corte Tesoura' }, data_hora_inicio: new Date(Date.now() + 3600000).toISOString() }
-          ]);
+          
+          // Cálculo real de métricas (Simplificado para hoje)
+          const faturamentoTotal = apps.reduce((acc: number, curr: any) => acc + (curr.valor_total || 0), 0);
+          setMetrics({ 
+            agendamentos: apps.length, 
+            faturamento: faturamentoTotal, 
+            novos: apps.length > 0 ? 1 : 0 
+          });
         }
       } catch (err) {
         console.error("DB Error", err);

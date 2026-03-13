@@ -83,17 +83,7 @@ export default function FinanceiroPage() {
         }));
 
         let todasTransacoes = historicoReal;
-
-        if (filtroBarbeiro === 'all') {
-          // Só adiciona os mocks globais e despesas se não estiver filtrando um barbeiro específico
-          const now = new Date();
-          const mocksExtras = [
-            { id: 'm1', data: now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), rawDate: new Date(), tipo: 'Entrada', categoria: 'Produto', descricao: 'Venda: Pomada Matte', valor: 45.00, status: 'Pago' },
-            { id: 'm2', data: new Date(now.getTime() - 86400000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), rawDate: new Date(now.getTime() - 86400000), tipo: 'Saída', categoria: 'Despesa', descricao: 'Conta de Luz', valor: -250.00, status: 'Pago' },
-          ];
-          todasTransacoes = [...historicoReal, ...mocksExtras];
-        }
-
+        
         todasTransacoes = todasTransacoes.sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
         setRawTransacoes(todasTransacoes);
       }
@@ -130,19 +120,15 @@ export default function FinanceiroPage() {
     });
 
     // Bases for aesthetic inflation (assuming history beyond platform)
-    const baseFaturamento = filtroTempo === 'mes' ? 12450.00 : (filtroTempo === 'semana' ? 3200.00 : 0);
-    const baseServicos = filtroTempo === 'mes' ? 320 : (filtroTempo === 'semana' ? 85 : 0);
-    const basePendente = filtroTempo === 'mes' ? 850.00 : (filtroTempo === 'semana' ? 250.00 : 0);
-
-    const faturamentoGeral = baseFaturamento + recebido;
-    const servicosRealizados = baseServicos + qtdServicosPagos;
-    const ticketFinal = servicosRealizados > 0 ? (faturamentoGeral / servicosRealizados) : 45.50;
+    const faturamentoGeral = recebido;
+    const servicosRealizados = qtdServicosPagos;
+    const ticketFinal = servicosRealizados > 0 ? (faturamentoGeral / servicosRealizados) : 0;
 
     return {
       transacoesFiltered: filtered,
       faturamentoTotal: faturamentoGeral,
       ticketMedio: ticketFinal,
-      aReceber: basePendente + pendente
+      aReceber: pendente
     };
   }, [filtroTempo, rawTransacoes]);
 
