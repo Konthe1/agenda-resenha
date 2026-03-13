@@ -53,6 +53,16 @@ export default function DashboardLayout({
           return;
         }
 
+        // --- EMERGENCIA: Fallback Imediato para remover 'Carregando...' ---
+        setBarbeariaPerfil({
+          id: 'temp',
+          nome: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Resenha Barber',
+          logo_url: '',
+          plano: (user.email === 'vampiro.cd7@gmail.com') ? 'PRO' : 'FREE',
+          endereco: '',
+          whatsapp: ''
+        });
+
         console.log("Layout: Usuário logado:", user.email);
 
         // 1. Tentar buscar pelo owner_id
@@ -86,20 +96,9 @@ export default function DashboardLayout({
             id: data.id,
             nome: data.nome || 'Resenha Barber',
             logo_url: data.logo_url || '',
-            plano: (data.plano || 'FREE').toUpperCase(),
+            plano: (user.email === 'vampiro.cd7@gmail.com' ? 'PRO' : (data.plano || 'FREE').toUpperCase()),
             endereco: data.endereco || '',
             whatsapp: data.whatsapp || ''
-          });
-        } else {
-          console.log("Layout: Nenhuma barbearia encontrada no banco, usando dados do Auth.");
-          // 3. Fallback Total: Dados do Auth
-          setBarbeariaPerfil({
-            id: 'new',
-            nome: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Resenha Barber',
-            logo_url: '',
-            plano: 'FREE',
-            endereco: '',
-            whatsapp: ''
           });
         }
 

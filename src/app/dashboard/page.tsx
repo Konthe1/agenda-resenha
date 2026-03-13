@@ -22,25 +22,35 @@ export default function DashboardOverview() {
     async function loadData() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          setIsLoading(false);
+          return;
+        }
+
+        console.log("Dashboard: Usuário logado:", user.email);
 
         // 1. Tentar buscar pelo owner_id (Priorizando PRO)
-        let { data: barbData } = await supabase
+        let { data: barbData, error: dbError } = await supabase
           .from('barbearias')
-          .select('id')
+          .select('id, plano')
           .eq('owner_id', user.id)
           .order('plano', { ascending: false })
           .limit(1)
           .maybeSingle();
 
+        if (dbError) console.error("Dashboard: Erro ao buscar barbearia:", dbError);
+
         // 2. Fallback
         if (!barbData) {
-          const { data: fallbackData } = await supabase
+          console.log("Dashboard: Barbearia por owner não encontrada, tentando fallback...");
+          const { data: fallbackData, error: fallbackError } = await supabase
             .from('barbearias')
-            .select('id')
+            .select('id, plano')
             .order('plano', { ascending: false })
             .limit(1)
             .maybeSingle();
+          
+          if (fallbackError) console.error("Dashboard: Erro no fallback:", fallbackError);
           barbData = fallbackData;
         }
 
