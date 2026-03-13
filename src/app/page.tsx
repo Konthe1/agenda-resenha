@@ -80,40 +80,87 @@ export default function Home() {
           </p>
         </section>
 
-        {/* Demonstration Gallery (New) */}
-        <section id="demonstracao" className="section-header animate-fade-in" style={{ padding: '4rem 2rem' }}>
-          <div className="badge">📱 Por Dentro da Plataforma</div>
-          <h2>Tudo o que você precisa no seu celular</h2>
-          <p>Gestão completa, rápida e intuitiva. Sem complicação.</p>
+        {/* Demonstration Gallery (Refined) */}
+        <section id="demonstracao" className="section-header animate-fade-in" style={{ padding: '6rem 2rem', background: 'linear-gradient(180deg, var(--bg-primary) 0%, rgba(249, 115, 22, 0.03) 100%)' }}>
+          <div className="badge">✨ Experiência Premium</div>
+          <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Sinta a Velocidade no seu Negócio</h2>
+          <p style={{ maxWidth: '600px', margin: '0 auto 4rem auto' }}>
+            Uma interface pensada para ser rápida. Tanto para você quanto para seu cliente.
+          </p>
           
-          <div className="gallery-grid" style={{ marginTop: '3rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
-             <div className="gallery-item" style={{ background: 'var(--bg-secondary)', borderRadius: '16px', border: '1px solid var(--border-color)', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
-                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                   <span style={{ fontSize: '1.2rem' }}>📊</span>
-                   <strong style={{ fontSize: '0.9rem' }}>Dashboard Inteligente</strong>
+          <div className="gallery-container" style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            gap: '3rem', 
+            flexWrap: 'wrap',
+            perspective: '1000px'
+          }}>
+             {/* Customer View Mockup */}
+             <div className="demo-card" style={{ 
+                width: '320px', 
+                background: 'rgba(255,255,255,0.03)', 
+                borderRadius: '40px', 
+                padding: '12px',
+                border: '1px solid rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+                transition: 'transform 0.4s ease'
+             }}>
+                <div style={{ padding: '1rem 0', textAlign: 'center' }}>
+                   <span style={{ fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--accent-primary)' }}>Visão do Cliente</span>
+                   <h4 style={{ fontSize: '1.2rem', margin: '0.5rem 0' }}>Agendamento em Segundos</h4>
                 </div>
-                <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', overflow: 'hidden' }}>
-                   <video src="/videos/dashboard_demo.webp" autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </div>
-             </div>
-             
-             <div className="gallery-item" style={{ background: 'var(--bg-secondary)', borderRadius: '16px', border: '1px solid var(--border-color)', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
-                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                   <span style={{ fontSize: '1.2rem' }}>📅</span>
-                   <strong style={{ fontSize: '0.9rem' }}>Agenda em Tempo Real</strong>
-                </div>
-                <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', overflow: 'hidden' }}>
-                   <video src="/videos/booking_demo.webp" autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ 
+                   height: '560px', 
+                   borderRadius: '30px', 
+                   overflow: 'hidden', 
+                   background: '#000',
+                   border: '4px solid #1a1a1a',
+                   position: 'relative'
+                }}>
+                   <video 
+                     src="/videos/booking_demo.mp4" 
+                     autoPlay 
+                     muted 
+                     loop 
+                     playsInline 
+                     onLoadedMetadata={(e) => (e.currentTarget.playbackRate = 1.5)}
+                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                   />
                 </div>
              </div>
 
-             <div className="gallery-item" style={{ background: 'var(--bg-secondary)', borderRadius: '16px', border: '1px solid var(--border-color)', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
-                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                   <span style={{ fontSize: '1.2rem' }}>💬</span>
-                   <strong style={{ fontSize: '0.9rem' }}>Notificação WhatsApp</strong>
+             {/* Dashboard View Mockup */}
+             <div className="demo-card" style={{ 
+                width: '320px', 
+                background: 'rgba(255,255,255,0.03)', 
+                borderRadius: '40px', 
+                padding: '12px',
+                border: '1px solid rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+                transition: 'transform 0.4s ease'
+             }}>
+                <div style={{ padding: '1rem 0', textAlign: 'center' }}>
+                   <span style={{ fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--accent-primary)' }}>Visão do Barbeiro</span>
+                   <h4 style={{ fontSize: '1.2rem', margin: '0.5rem 0' }}>Gestão e Notificações</h4>
                 </div>
-                <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', overflow: 'hidden' }}>
-                   <video src="/videos/dashboard_demo.webp" autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ 
+                   height: '560px', 
+                   borderRadius: '30px', 
+                   overflow: 'hidden', 
+                   background: '#000',
+                   border: '4px solid #1a1a1a'
+                }}>
+                   <video 
+                     src="/videos/dashboard_demo.mp4" 
+                     autoPlay 
+                     muted 
+                     loop 
+                     playsInline 
+                     onLoadedMetadata={(e) => (e.currentTarget.playbackRate = 1.5)}
+                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                   />
                 </div>
              </div>
           </div>
