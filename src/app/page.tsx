@@ -67,19 +67,22 @@ export default function Home() {
             O único sistema inteligente focado no lucro do dono. Agendamentos 24h, notificações no WhatsApp e zero dor de cabeça para você focar no corte e nos amigos.
           </p>
           <div className="hero-actions">
-            <Link href="/login" className="btn-primary">
-              <span>Começar Teste de 14 Dias</span>
+            <Link href="/login" className="btn-primary" style={{ padding: '1.2rem 2.5rem', fontSize: '1.1rem' }}>
+              <span>Começar Agora — Grátis por 14 dias</span>
               <span className="arrow">→</span>
             </Link>
-            <Link href="/demo-agendamento" className="btn-secondary">
+            <Link href="/demo-agendamento" className="btn-secondary" style={{ padding: '1.2rem 2.5rem', fontSize: '1.1rem' }}>
               <span>Ver Demo (Visão do Cliente)</span>
             </Link>
           </div>
+          <p style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+             <span style={{ color: '#fbbf24' }}>⭐⭐⭐⭐⭐</span> +30 barbearias já mudaram o jogo
+          </p>
         </section>
 
         {/* Social Proof */}
         <section className="social-proof animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <p>Potencializando a gestão de mais de 500 barbearias no Brasil</p>
+          <p>Potencializando a gestão de barbearias em todo o Brasil</p>
           <div className="logo-cloud">
             <div className="logo-placeholder"><span>✂️</span> The Classic Barber</div>
             <div className="logo-placeholder"><span>💈</span> Navalha Premium</div>
@@ -121,6 +124,67 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Como Funciona */}
+        <section id="como-funciona" className="section-header">
+           <div className="badge">Passo a Passo</div>
+           <h2>Como funciona? Simples como um degradê.</h2>
+           <p>Você não precisa ser expert em tecnologia. Nós cuidamos da parte chata.</p>
+           
+           <div className="steps-container" style={{ marginTop: '3rem', width: '100%' }}>
+              <div className="step-item">
+                 <div className="step-number">1</div>
+                 <h4>Crie sua conta em 2 min</h4>
+                 <p>Cadastre seus serviços e barbeiros. É mais rápido que fazer uma barba.</p>
+              </div>
+              <div className="step-arrow">→</div>
+              <div className="step-item">
+                 <div className="step-number">2</div>
+                 <h4>Coloque o link no Instagram</h4>
+                 <p>Compartilhe seu link exclusivo na bio e nos stories. Seus clientes vão amar.</p>
+              </div>
+              <div className="step-arrow">→</div>
+              <div className="step-item">
+                 <div className="step-number">3</div>
+                 <h4>Receba Agendamentos 24h</h4>
+                 <p>O sistema reserva o horário, avisa você e envia lembrete pro cliente via WhatsApp.</p>
+              </div>
+           </div>
+        </section>
+
+        {/* Comparativo Section */}
+        <section className="section-header" style={{ background: 'rgba(255,255,255,0.02)', padding: '4rem 2rem', borderRadius: '24px', border: '1px solid var(--bg-tertiary)' }}>
+           <h2>Resenha vs. Velha Escola</h2>
+           <p>Por que os melhores barbeiros estão abandonando o caderninho e o WhatsApp manual?</p>
+           
+           <div className="comparison-table" style={{ marginTop: '3rem', width: '100%', maxWidth: '900px' }}>
+              <div className="comparison-row header">
+                 <div className="comp-feature">Funcionalidade</div>
+                 <div className="comp-manual">Agendamento Manual</div>
+                 <div className="comp-resenha">Agenda Resenha 🚀</div>
+              </div>
+              <div className="comparison-row">
+                 <div className="comp-feature">Disponibilidade</div>
+                 <div className="comp-manual">Só quando você responde</div>
+                 <div className="comp-resenha">24h por dia, 7 dias por semana</div>
+              </div>
+              <div className="comparison-row">
+                 <div className="comp-feature">Lembretes</div>
+                 <div className="comp-manual">Você tem que lembrar de enviar</div>
+                 <div className="comp-resenha">Automático via WhatsApp</div>
+              </div>
+              <div className="comparison-row">
+                 <div className="comp-feature">Esquecimentos</div>
+                 <div className="comp-manual">Alta taxa de "furos"</div>
+                 <div className="comp-resenha">Redução de até 90% nos furos</div>
+              </div>
+              <div className="comparison-row">
+                 <div className="comp-feature">Gestão</div>
+                 <div className="comp-manual">Caderno ou planilha lenta</div>
+                 <div className="comp-resenha">Dashboard financeiro instantâneo</div>
+              </div>
+           </div>
+        </section>
+
         {/* Testimonials */}
         <section id="depoimentos" className="section-header">
           <h2>Barbearias que mudaram o jogo</h2>
@@ -131,9 +195,11 @@ export default function Home() {
               <div className="quote-icon">"</div>
               <p className="testimonial-text">Antes nós perdemos pelo menos 3 a 4 horários no sábado porque o pessoal esquecia. Desde que ligamos o disparo de WhatsApp do Resenha, nossa taxa de comparecimento foi para 98%.</p>
               <div className="testimonial-author">
-                <div className="author-avatar">M</div>
+                <div className="author-avatar">
+                   <img src="/marcos_navalha_headshot_1773373064245.png" alt="Marcos Navalha" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                </div>
                 <div className="author-info">
-                  <h4>Marcos "Navalha" Ribeiro</h4>
+                  <h4>Marcos Ribeiro</h4>
                   <span>Dono, Brotherhood Shop</span>
                 </div>
               </div>
@@ -143,7 +209,9 @@ export default function Home() {
               <div className="quote-icon">"</div>
               <p className="testimonial-text">A facilidade pro cliente é absurda. Eles mesmos elogiam que não precisam fazer cadastro chato. Clicou no link da bio, escolheu o barbeiro, tá agendado. Dobramos o faturamento mensal.</p>
               <div className="testimonial-author">
-                <div className="author-avatar">T</div>
+                <div className="author-avatar">
+                   <img src="/thiago_silva_headshot_1773373080523.png" alt="Thiago Silva" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                </div>
                 <div className="author-info">
                   <h4>Thiago Silva</h4>
                   <span>Sócio, The Classic Barber</span>
@@ -151,6 +219,19 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Demo Hook */}
+        <section className="section-header" style={{ padding: '6rem 2rem', textAlign: 'center' }}>
+           <div className="badge" style={{ background: 'rgba(249, 115, 22, 0.1)', color: 'var(--accent-primary)' }}>Experimente Agora</div>
+           <h2 style={{ fontSize: '2.5rem', marginTop: '1rem' }}>Sinta a facilidade na pele.</h2>
+           <p style={{ maxWidth: '700px' }}>Veja exatamente como seu cliente vai agendar com você. Sem senha, sem app, sem fricção. É clicar e marcar.</p>
+           <div style={{ marginTop: '2.5rem' }}>
+              <Link href="/demo-agendamento" className="btn-primary" style={{ padding: '1.2rem 3rem', fontSize: '1.1rem', background: 'transparent', border: '2px solid var(--accent-primary)', color: 'var(--accent-primary)', boxShadow: 'none' }}>
+                 <span>Simular Agendamento (Demo ao Vivo)</span>
+              </Link>
+           </div>
+           <p style={{ marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>✨ O diferencial que vai colocar você na frente da concorrência</p>
         </section>
 
         {/* Pricing */}
@@ -189,10 +270,13 @@ export default function Home() {
                 </li>
                 <li>
                   <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                  Dashboard Financeiro
+                  Lembretes Básicos via WhatsApp
+                </li>
+                <li>
+                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: '1.25rem' }}>⚠️ Sem Gestão de Estoque e Fidelidade</span>
                 </li>
               </ul>
-              <Link href="/login" className="btn-secondary">Assinar Básico</Link>
+              <Link href="/login" className="btn-secondary" style={{ width: '100%', textAlign: 'center' }}>Começar Agora</Link>
             </div>
 
             <div className="pricing-card popular">
@@ -209,19 +293,19 @@ export default function Home() {
                 </li>
                 <li>
                   <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                  Disparos automáticos no WhatsApp
+                  Disparos e **Áudios** no WhatsApp
                 </li>
                 <li>
                   <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                  Gestão de Produtos (Estoque / Vendas)
-                </li>
-                <li>
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                  Planos Pré-Pagos / Mensalistas
+                  Gestão PRO (Estoque, Vendas, Financeiro)
                 </li>
                 <li>
                   <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
                   Fidelidade, Cashback e Mensagens em Massa
+                </li>
+                <li style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  Foco Total no Aumento do seu Lucro
                 </li>
               </ul>
               <button 
@@ -282,11 +366,41 @@ export default function Home() {
 
             <div className="faq-item">
               <div className="faq-question">
-                Tem fidelidade ou multa de cancelamento?
+                 A partir de quando começo a pagar?
                 <span className="faq-icon">+</span>
               </div>
               <div className="faq-answer">
-                Zero burocracia. O plano é mensal, sem letras miúdas. Se você não gostar do sistema (o que achamos difícil), você pode cancelar com 1 clique.
+                 Você tem 14 dias de teste totalmente grátis, sem precisar colocar cartão de crédito agora. Só paga se o sistema realmente te ajudar a ganhar mais dinheiro.
+              </div>
+            </div>
+
+            <div className="faq-item">
+              <div className="faq-question">
+                 Funciona se eu tiver apenas um barbeiro?
+                <span className="faq-icon">+</span>
+              </div>
+              <div className="faq-answer">
+                 Com certeza! O Plano Básico foi feito exatamente para barbearias individuais. Conforme você cresce e contrata equipe, pode migrar para o Pro.
+              </div>
+            </div>
+
+            <div className="faq-item">
+              <div className="faq-question">
+                 E se o meu cliente não tiver WhatsApp?
+                <span className="faq-icon">+</span>
+              </div>
+              <div className="faq-answer">
+                 O agendamento é feito via link web (pelo navegador), então qualquer um com internet consegue agendar. O WhatsApp é usado para enviar os lembretes automáticos após o agendamento.
+              </div>
+            </div>
+
+            <div className="faq-item">
+              <div className="faq-question">
+                 Quanto tempo leva para configurar tudo?
+                <span className="faq-icon">+</span>
+              </div>
+              <div className="faq-answer">
+                 Menos de 10 minutos. Você cadastra o nome da sua barbearia, seus serviços e pronto. Já pode começar a aceitar agendamentos na mesma hora.
               </div>
             </div>
           </div>
@@ -298,9 +412,8 @@ export default function Home() {
              <h2>Pronto para profissionalizar sua barbearia?</h2>
              <p>Junte-se a centenas de barbeiros que otimizam o tempo e faturam mais todo mês. Teste grátis nos primeiros 14 dias.</p>
              <div className="cta-buttons" style={{ marginTop: '1rem' }}>
-                <Link href="/login" className="btn-primary">
-                  <span>Criar Conta Agora</span>
-                  <span className="arrow">→</span>
+                <Link href="/login" className="btn-primary" style={{ padding: '1.2rem 3rem', fontSize: '1.2rem' }}>
+                  <span>Quero parar de perder cliente por esquecimento →</span>
                 </Link>
              </div>
            </div>
@@ -351,9 +464,8 @@ export default function Home() {
         <div className="footer-bottom">
           <p>&copy; {new Date().getFullYear()} Agenda Resenha. Todos os direitos reservados.</p>
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <a href="#" style={{ color: 'var(--text-secondary)' }}>Instagram</a>
-            <a href="#" style={{ color: 'var(--text-secondary)' }}>LinkedIn</a>
-            <a href="#" style={{ color: 'var(--text-secondary)' }}>YouTube</a>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-secondary)' }}>Instagram</a>
+            <a href="https://wa.me/5500000000000" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-secondary)' }}>WhatsApp</a>
           </div>
         </div>
       </footer>
