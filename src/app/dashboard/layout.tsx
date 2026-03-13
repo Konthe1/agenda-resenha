@@ -58,12 +58,12 @@ export default function DashboardLayout({
           id: 'temp',
           nome: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Resenha Barber',
           logo_url: '',
-          plano: (user.email === 'vampiro.cd7@gmail.com') ? 'PRO' : 'FREE',
+          plano: (user?.email === 'vampiro.cd7@gmail.com') ? 'PRO' : 'FREE',
           endereco: '',
           whatsapp: ''
         });
 
-        console.log("Layout: Usuário logado:", user.email);
+        console.log("Layout: Usuário logado:", user?.email);
 
         // 1. Tentar buscar pelo owner_id
         let { data, error: dbError } = await supabase
@@ -96,7 +96,7 @@ export default function DashboardLayout({
             id: data.id,
             nome: data.nome || 'Resenha Barber',
             logo_url: data.logo_url || '',
-            plano: (user.email === 'vampiro.cd7@gmail.com' ? 'PRO' : (data.plano || 'FREE').toUpperCase()),
+            plano: (user?.email === 'vampiro.cd7@gmail.com' ? 'PRO' : (data.plano || 'FREE').toUpperCase()),
             endereco: data.endereco || '',
             whatsapp: data.whatsapp || ''
           });

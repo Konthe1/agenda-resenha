@@ -70,7 +70,7 @@ export default function ProdutosPage() {
         if (barbearia) {
           console.log("Produtos: Barbearia carregada. Plano:", barbearia.plano);
           setBarbeariaId(barbearia.id);
-          setPlano(user.email === 'vampiro.cd7@gmail.com' ? 'PRO' : (barbearia.plano || 'FREE').toUpperCase());
+          setPlano(user?.email === 'vampiro.cd7@gmail.com' ? 'PRO' : (barbearia.plano || 'FREE').toUpperCase());
           
           // 3. Buscar produtos
           const { data: prods, error: prodsErr } = await supabase
@@ -110,26 +110,7 @@ export default function ProdutosPage() {
           }
         }
 
-        if (barbearia) {
-          console.log("Barbearia ID definido:", barbearia.id);
-          setBarbeariaId(barbearia.id);
-          setPlano(user?.email === 'vampiro.cd7@gmail.com' ? 'PRO' : (barbearia.plano || 'FREE').toUpperCase());
-          
-          // 3. Buscar produtos
-          const { data: prods, error: prodsErr } = await supabase
-            .from('produtos')
-            .select('*')
-            .eq('barbearia_id', barbearia.id)
-            .order('nome');
-          
-          if (prodsErr) console.error("Erro ao buscar produtos:", prodsErr);
-          if (prods) {
-            console.log(`${prods.length} produtos carregados.`);
-            setProdutos(prods);
-          }
-        } else {
-          console.error("FALHA CRÍTICA: Nenhuma barbearia encontrada ou criada.");
-        }
+
       } catch (err) {
         console.error("Erro fatal no loadInitialData:", err);
       } finally {
