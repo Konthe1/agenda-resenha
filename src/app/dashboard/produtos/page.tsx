@@ -36,32 +36,56 @@ export default function ProdutosPage() {
         const user = sessionData?.session?.user;
         
         let barbearia = null;
-
         if (user) {
-          console.log("Usuário identificado:", user.id);
+          console.log("Produtos: Usuário identificado:", user.email);
           // 2. Buscar a barbearia deste usuário
-          let { data: barbOwner } = await supabase
+          let { data: barbOwner, error: dbError } = await supabase
             .from('barbearias')
             .select('id, plano')
             .eq('owner_id', user.id)
             .order('plano', { ascending: false })
             .limit(1)
             .maybeSingle();
+          
+          if (dbError) console.error("Produtos: Erro ao buscar barbearia:", dbError);
           barbearia = barbOwner;
 
           // Fallback: se não achar pelo owner, tenta a primeira disponível (para demos/novos users)
           if (!barbearia) {
-            console.log("Buscando qualquer barbearia como fallback...");
-            const { data: firstBarb } = await supabase
+            console.log("Produtos: Nenhuma barbearia encontrada para o owner, tentando fallback...");
+            const { data: firstBarb, error: fallbackError } = await supabase
               .from('barbearias')
               .select('id, plano')
               .order('plano', { ascending: false })
               .limit(1)
               .maybeSingle();
+            
+            if (fallbackError) console.error("Produtos: Erro no fallback:", fallbackError);
             barbearia = firstBarb;
           }
         }
 
+        if (barbearia) {
+          console.log("Produtos: Barbearia carregada. Plano:", barbearia.plano);
+          setBarbeariaId(barbearia.id);
+          setPlano((barbearia.plano || 'FREE').toUpperCase());
+          
+          // 3. Buscar produtos
+          const { data: prods, error: prodsErr } = await supabase
+            .from('produtos')
+            .select('*')
+            .eq('barbearia_id', barbearia.id)
+            .order('nome');
+          
+          if (prodsErr) console.error("Erro ao buscar produtos:", prodsErr);
+          if (prods) {
+            console.log(`${prods.length} produtos carregados.`);
+            setProdutos(prods);
+          }
+        } else {
+          console.log("Produtos: Nenhuma barbearia encontrada no sistema.");
+          setPlano('FREE');
+        }
         // 4. Fallback 2: Se ATE AGORA for null, a tabela barbearias está VAZIA. 
         // Vamos tentar criar uma padrão para o usuário logado não travar.
         if (!barbearia && user) {

@@ -44,59 +44,79 @@ export default function DashboardLayout({
 
   useEffect(() => {
     async function fetchBarbearia() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      try {
+        console.log("Layout: Iniciando fetchBarbearia...");
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          console.log("Layout: Nenhum usuário encontrado no Auth.");
+          return;
+        }
 
-      // 1. Tentar buscar pelo owner_id (Priorizando PRO se houver duplicatas)
-      let { data } = await supabase
-        .from('barbearias')
-        .select('id, nome, logo_url, plano, endereco, whatsapp')
-        .eq('owner_id', user.id)
-        .order('plano', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        console.log("Layout: Usuário logado:", user.email);
 
-      // 2. Fallback: buscar qualquer barbearia
-      if (!data) {
-        const { data: fallbackData } = await supabase
+        // 1. Tentar buscar pelo owner_id
+        let { data, error: dbError } = await supabase
           .from('barbearias')
           .select('id, nome, logo_url, plano, endereco, whatsapp')
+          .eq('owner_id', user.id)
           .order('plano', { ascending: false })
           .limit(1)
           .maybeSingle();
-        data = fallbackData;
-      }
 
-      if (data) {
-        setBarbeariaPerfil({
-          id: data.id,
-          nome: data.nome || 'Resenha Barber',
-          logo_url: data.logo_url || '',
-          plano: (data.plano || 'FREE').toUpperCase(),
-          endereco: data.endereco || '',
-          whatsapp: data.whatsapp || ''
-        });
-      } else {
-        // 3. Fallback Total: Dados do Auth se a tabela estiver vazia
-        setBarbeariaPerfil({
-          id: 'new',
-          nome: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Resenha Barber',
-          logo_url: '',
-          plano: 'FREE',
-          endereco: '',
-          whatsapp: ''
-        });
-      }
+        if (dbError) console.error("Layout: Erro ao buscar barbearia por owner_id:", dbError);
 
-      // 4. Sincronização WhatsApp (Independente de onde veio o dado)
-      try {
-        const resSt = await fetch('/api/whatsapp/status');
-        const stData = await resSt.json();
-        if (stData.connected && stData.number) {
-          setBarbeariaPerfil(prev => ({ ...prev, whatsapp: stData.number }));
+        // 2. Fallback: buscar qualquer barbearia
+        if (!data) {
+          console.log("Layout: Barbearia por owner não encontrada, tentando fallback...");
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('barbearias')
+            .select('id, nome, logo_url, plano, endereco, whatsapp')
+            .order('plano', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          if (fallbackError) console.error("Layout: Erro no fallback de barbearia:", fallbackError);
+          data = fallbackData;
         }
-      } catch (e) {
-        console.error("Erro ao despertar WhatsApp:", e);
+
+        if (data) {
+          console.log("Layout: Dados da barbearia carregados:", data.nome);
+          setBarbeariaPerfil({
+            id: data.id,
+            nome: data.nome || 'Resenha Barber',
+            logo_url: data.logo_url || '',
+            plano: (data.plano || 'FREE').toUpperCase(),
+            endereco: data.endereco || '',
+            whatsapp: data.whatsapp || ''
+          });
+        } else {
+          console.log("Layout: Nenhuma barbearia encontrada no banco, usando dados do Auth.");
+          // 3. Fallback Total: Dados do Auth
+          setBarbeariaPerfil({
+            id: 'new',
+            nome: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Resenha Barber',
+            logo_url: '',
+            plano: 'FREE',
+            endereco: '',
+            whatsapp: ''
+          });
+        }
+
+        // 4. Sincronização WhatsApp
+        try {
+          const resSt = await fetch('/api/whatsapp/status');
+          if (resSt.ok) {
+            const stData = await resSt.json();
+            if (stData.connected && stData.number) {
+              setBarbeariaPerfil(prev => ({ ...prev, whatsapp: stData.number }));
+            }
+          }
+        } catch (e) {
+          console.error("Layout: Erro ao despertar WhatsApp:", e);
+        }
+      } catch (error) {
+        console.error("Layout: Erro crítico em fetchBarbearia:", error);
       }
     }
     fetchBarbearia();
