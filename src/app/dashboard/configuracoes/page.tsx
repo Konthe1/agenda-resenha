@@ -15,7 +15,7 @@ export default function ConfiguracoesPage() {
   const [barbeiros, setBarbeiros] = useState<any[]>([]);
   const [servicos, setServicos] = useState<any[]>([]);
   const [editingServiceId, setEditingServiceId] = useState<any>(null);
-  const [barbeariaPerfil, setBarbeariaPerfil] = useState({ id: '', nome: '', slug: '', endereco: '', logo_url: '' });
+  const [barbeariaPerfil, setBarbeariaPerfil] = useState({ id: '', nome: '', slug: '', endereco: '', logo_url: '', whatsapp: '', plano: 'FREE' });
 
   // Modal States
   const [showServiceModal, setShowServiceModal] = useState(false);
@@ -138,6 +138,7 @@ export default function ConfiguracoesPage() {
            slug: barbeariaPerfil.slug,
            endereco: barbeariaPerfil.endereco,
            logo_url: barbeariaPerfil.logo_url,
+           whatsapp: barbeariaPerfil.whatsapp,
            owner_id: userId
         };
 
@@ -156,7 +157,9 @@ export default function ConfiguracoesPage() {
               nome: data.nome || '',
               slug: data.slug || '',
               endereco: data.endereco || '',
-              logo_url: data.logo_url || ''
+              logo_url: data.logo_url || '',
+              whatsapp: data.whatsapp || '',
+              plano: data.plano || 'FREE'
            });
         }
         
@@ -290,33 +293,36 @@ export default function ConfiguracoesPage() {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData.user?.id;
       
-      let q = supabase.from('barbearias').select('*');
-      if (userId) {
-         q = q.eq('owner_id', userId);
+      // 1. Tentar buscar pelo owner_id (Priorizando PRO)
+      let { data: barbData } = await supabase
+        .from('barbearias')
+        .select('*')
+        .eq('owner_id', userId)
+        .order('plano', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      // 2. Fallback
+      if (!barbData) {
+        const { data: globalBarb } = await supabase
+          .from('barbearias')
+          .select('*')
+          .order('plano', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        barbData = globalBarb;
       }
-      
-      const { data: barbData, error: barbErr } = await q.limit(1).maybeSingle();
-      
+
       if (barbData) {
         setBarbeariaPerfil({
            id: barbData.id,
            nome: barbData.nome || '',
            slug: barbData.slug || '',
            endereco: barbData.endereco || '',
-           logo_url: barbData.logo_url || ''
+           logo_url: barbData.logo_url || '',
+           whatsapp: barbData.whatsapp || '',
+           plano: barbData.plano || 'FREE'
         });
-      } else if (!barbErr) {
-        // Se não encontrou nenhuma e não deu erro, tentamos a primeira barbearia global como fallback
-        const { data: globalBarb } = await supabase.from('barbearias').select('*').limit(1).maybeSingle();
-        if (globalBarb) {
-           setBarbeariaPerfil({
-              id: globalBarb.id,
-              nome: globalBarb.nome || '',
-              slug: globalBarb.slug || '',
-              endereco: globalBarb.endereco || '',
-              logo_url: globalBarb.logo_url || ''
-           });
-        }
       }
       
       // Fetch services
