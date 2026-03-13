@@ -340,6 +340,9 @@ export default function ConfiguracoesPage() {
         
         if (st.connected) {
            setIsWhatsappConnected(true);
+           if (st.number) {
+             setBarbeariaPerfil(prev => ({ ...prev, whatsapp: st.number }));
+           }
         } else {
            console.log("WhatsApp desconectado. Tentando 'acordar' automaticamente...");
            setQrCodeMessage("📱 Tentando reconectar ao WhatsApp automaticamente...");
@@ -384,6 +387,9 @@ export default function ConfiguracoesPage() {
       } else if (data.alreadyConnected) {
          setQrCodeMessage("Seu número já está conectado e pronto para disparos! ✅");
          setIsWhatsappConnected(true);
+         if (data.number) {
+           setBarbeariaPerfil(prev => ({ ...prev, whatsapp: data.number }));
+         }
       } else {
          setQrCodeMessage("Houve um erro: " + (data.error || "Tente novamente."));
       }

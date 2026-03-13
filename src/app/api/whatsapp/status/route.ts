@@ -24,10 +24,19 @@ export async function GET() {
     // Na Evolution API, o state pode vir como "open", "connecting", "close" 
     // Mapeamos open para true.
     if (data && data.instance && data.instance.state === 'open') {
-      return NextResponse.json({ connected: true });
+      // Tentar extrair o número do JID (owner) se disponível
+      let number = null;
+      if (data.instance.owner) {
+        number = data.instance.owner.split('@')[0];
+      }
+      return NextResponse.json({ 
+        connected: true, 
+        number: number,
+        state: data.instance.state 
+      });
     }
 
-    return NextResponse.json({ connected: false });
+    return NextResponse.json({ connected: false, state: data?.instance?.state || 'close' });
   } catch (error) {
     console.error("Erro ao checar status de conexão:", error);
     return NextResponse.json({ connected: false });

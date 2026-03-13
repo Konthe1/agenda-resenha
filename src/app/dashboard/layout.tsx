@@ -70,6 +70,20 @@ export default function DashboardLayout({
           endereco: data.endereco,
           whatsapp: data.whatsapp
         });
+
+        // 3. Opcional: Tentar pegar o número REAL conectado no WhatsApp de forma reativa
+        try {
+          const resSt = await fetch('/api/whatsapp/status');
+          const stData = await resSt.json();
+          if (stData.connected && stData.number) {
+            setBarbeariaPerfil(prev => ({
+              ...prev,
+              whatsapp: stData.number // Prioriza o número que está REALMENTE conectado
+            }));
+          }
+        } catch (e) {
+          console.error("Erro ao sincronizar número do WhatsApp:", e);
+        }
       }
     }
     fetchBarbearia();

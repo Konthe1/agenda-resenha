@@ -45,9 +45,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, qrcode: qrcodeBase64 });
     } else {
       // Se não vier a string imagem, provavelmente o WhatsApp já está pareado!
+      // Tentar buscar o número para retornar
+      let number = null;
+      try {
+        const stateRes = await fetch(`${renderUrl}/instance/connectionState/${instanceName}`, {
+          headers: { 'apikey': apiKey }
+        });
+        const stateData = await stateRes.json();
+        if (stateData.instance && stateData.instance.owner) {
+          number = stateData.instance.owner.split('@')[0];
+        }
+      } catch (e) {
+        console.error("Erro ao buscar número na conexão:", e);
+      }
+
       return NextResponse.json({ 
         success: true, 
         alreadyConnected: true, 
+        number: number,
         message: 'Aparelho já está conectado. (Se quiser ler de novo, desconecte pelo celular)' 
       });
     }
