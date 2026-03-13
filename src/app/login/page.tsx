@@ -72,7 +72,7 @@ export default function Login() {
           {!isRegister && (
             <div className="form-options">
               <label className="remember-me">
-                <input type="checkbox" />
+                <input type="checkbox" name="remember" />
                 Lembrar de mim
               </label>
               <Link href="#" className="forgot-password">Esqueceu a senha?</Link>

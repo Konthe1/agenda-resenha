@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "@/app/login/actions";
 import { supabase } from "@/lib/supabase/client";
 import "./dashboard.css";
 
@@ -102,8 +103,10 @@ export default function DashboardLayout({
   }, []);
 
   const handleLogout = async () => {
+    // 1. Sign out on client
     await supabase.auth.signOut();
-    window.location.href = '/';
+    // 2. Sign out on server to clear cookies definitively
+    await signOut();
   };
 
   const getInitials = (name: string) => {
