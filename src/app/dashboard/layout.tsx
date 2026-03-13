@@ -45,19 +45,30 @@ export default function DashboardLayout({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data } = await supabase
+      // Primeiro tentamos buscar a barbearia vinculada ao owner_id do usuário logado
+      let { data, error } = await supabase
         .from('barbearias')
         .select('nome, logo_url, plano, endereco, whatsapp')
         .eq('owner_id', user.id)
         .maybeSingle();
+
+      // Se não encontrar para o owner_id, tentamos pegar qualquer barbearia como fallback (para demos)
+      if (!data && !error) {
+        const { data: fallbackData } = await supabase
+          .from('barbearias')
+          .select('nome, logo_url, plano, endereco, whatsapp')
+          .limit(1)
+          .maybeSingle();
+        data = fallbackData;
+      }
 
       if (data) {
         setBarbeariaPerfil({
           nome: data.nome || 'Resenha Barber',
           logo_url: data.logo_url || '',
           plano: (data.plano || 'FREE').toUpperCase(),
-          endereco: data.endereco || '',
-          whatsapp: data.whatsapp || ''
+          endereco: data.endereco,
+          whatsapp: data.whatsapp
         });
       }
     }
