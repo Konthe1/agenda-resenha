@@ -20,8 +20,7 @@ export default function ProdutosPage() {
     estoque: '',
     estoque_minimo: '5',
     categoria: 'Geral',
-    imagem_url: '',
-    codigo_barras: ''
+    imagem_url: ''
   });
   const [isUploading, setIsUploading] = useState(false);
 
