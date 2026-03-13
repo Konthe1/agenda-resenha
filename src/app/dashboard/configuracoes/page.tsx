@@ -300,9 +300,9 @@ export default function ConfiguracoesPage() {
       if (barbData) {
         setBarbeariaPerfil({
            id: barbData.id,
-           nome: barbData.nome || 'Resenha Barber Oficial',
-           slug: barbData.slug || 'resenha-barber',
-           endereco: barbData.endereco || 'Rua das Barbearias, 123 - Centro',
+           nome: barbData.nome || '',
+           slug: barbData.slug || '',
+           endereco: barbData.endereco || '',
            logo_url: barbData.logo_url || ''
         });
       } else if (!barbErr) {
@@ -311,9 +311,9 @@ export default function ConfiguracoesPage() {
         if (globalBarb) {
            setBarbeariaPerfil({
               id: globalBarb.id,
-              nome: globalBarb.nome || 'Resenha Barber Oficial',
-              slug: globalBarb.slug || 'resenha-barber',
-              endereco: globalBarb.endereco || 'Rua das Barbearias, 123 - Centro',
+              nome: globalBarb.nome || '',
+              slug: globalBarb.slug || '',
+              endereco: globalBarb.endereco || '',
               logo_url: globalBarb.logo_url || ''
            });
         }

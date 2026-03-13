@@ -74,8 +74,7 @@ export default function MarketingPage() {
 
         if (barbearia) {
           setBarbeariaId(barbearia.id);
-          // Forçar PRO em fallback/casos vazios para garantir que a demo não trave
-          setPlano((barbearia.plano || 'PRO').toUpperCase());
+          setPlano((barbearia.plano || 'FREE').toUpperCase());
           setSettings({
             fidelidade_ativa: barbearia.fidelidade_ativa ?? true,
             fidelidade_cortes: barbearia.fidelidade_cortes ?? 10,

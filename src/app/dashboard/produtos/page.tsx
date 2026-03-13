@@ -84,8 +84,7 @@ export default function ProdutosPage() {
         if (barbearia) {
           console.log("Barbearia ID definido:", barbearia.id);
           setBarbeariaId(barbearia.id);
-          // Forçar PRO em ambiente de demo/fallback
-          setPlano((barbearia.plano || 'PRO').toUpperCase());
+          setPlano((barbearia.plano || 'FREE').toUpperCase());
           
           // 3. Buscar produtos
           const { data: prods, error: prodsErr } = await supabase
