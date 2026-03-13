@@ -64,14 +64,21 @@ export default function MarketingPage() {
             cashback_ativa: barbData.cashback_ativo ?? true,
             cashback_percentual: barbData.cashback_percentual ?? 5
           });
-        }
 
-        // 2. Buscar Serviços (Para o Dropdown de Fidelidade)
-        const { data: servData } = await supabase
-          .from('servicos')
-          .select('id, nome')
-          .order('nome');
-        if (servData) setServicos(servData);
+          // 2. Buscar Serviços DA BARBEARIA (Para o Dropdown de Fidelidade)
+          console.log("Buscando serviços para barbearia:", barbData.id);
+          const { data: servData, error: servError } = await supabase
+            .from('servicos')
+            .select('id, nome')
+            .eq('barbearia_id', barbData.id)
+            .order('nome');
+          
+          if (servError) console.error("Erro ao buscar serviços:", servError);
+          if (servData) {
+            console.log(`${servData.length} serviços encontrados.`);
+            setServicos(servData);
+          }
+        }
 
         // 3. Métricas Básicas
         const { count } = await supabase.from('clientes').select('*', { count: 'exact', head: true });
