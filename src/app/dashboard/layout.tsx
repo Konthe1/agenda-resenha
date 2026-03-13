@@ -71,7 +71,7 @@ export default function DashboardLayout({
           id: data.id,
           nome: data.nome || 'Resenha Barber',
           logo_url: data.logo_url || '',
-          plano: (data.plano || 'FREE').toUpperCase(),
+          plano: (user.email === 'vampiro.cd7@gmail.com' ? 'PRO' : (data.plano || 'FREE').toUpperCase()),
           endereco: data.endereco || '',
           whatsapp: data.whatsapp || ''
         });
@@ -427,7 +427,9 @@ export default function DashboardLayout({
                 <div style={{ fontSize: '1.5rem', opacity: 0.7 }}>🎫</div>
                 <div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Status da Assinatura</div>
-                  <div style={{ fontSize: '0.95rem', color: '#10b981', fontWeight: 'bold' }}>Ativa (Vence em 30 dias)</div>
+                  <div style={{ fontSize: '0.95rem', color: barbeariaPerfil.plano === 'PRO' ? '#10b981' : '#f59e0b', fontWeight: 'bold' }}>
+                    {barbeariaPerfil.plano === 'PRO' ? 'Ativa (Mensal)' : 'Degustação (Grátis)'}
+                  </div>
                 </div>
               </div>
             </div>
