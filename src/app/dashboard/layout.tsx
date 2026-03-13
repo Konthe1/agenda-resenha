@@ -32,6 +32,7 @@ export default function DashboardLayout({
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [barbeariaPerfil, setBarbeariaPerfil] = useState({
+    id: '',
     nome: 'Resenha Barber',
     logo_url: '',
     plano: 'PRO',
@@ -58,7 +59,7 @@ export default function DashboardLayout({
       if (!data) {
         const { data: fallbackData } = await supabase
           .from('barbearias')
-          .select('nome, logo_url, plano, endereco, whatsapp')
+          .select('id, nome, logo_url, plano, endereco, whatsapp')
           .order('plano', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -67,6 +68,7 @@ export default function DashboardLayout({
 
       if (data) {
         setBarbeariaPerfil({
+          id: data.id,
           nome: data.nome || 'Resenha Barber',
           logo_url: data.logo_url || '',
           plano: (data.plano || 'FREE').toUpperCase(),

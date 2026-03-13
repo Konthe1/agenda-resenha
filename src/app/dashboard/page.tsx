@@ -21,10 +21,36 @@ export default function DashboardOverview() {
   useEffect(() => {
     async function loadData() {
       try {
-        // Fetch from Supabase - using dummy barbearia ID for demo
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // 1. Tentar buscar pelo owner_id (Priorizando PRO)
+        let { data: barbData } = await supabase
+          .from('barbearias')
+          .select('id')
+          .eq('owner_id', user.id)
+          .order('plano', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        // 2. Fallback
+        if (!barbData) {
+          const { data: fallbackData } = await supabase
+            .from('barbearias')
+            .select('id')
+            .order('plano', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          barbData = fallbackData;
+        }
+
+        const activeBarbeariaId = barbData?.id || '1';
+
+        // Fetch from Supabase
         const { data: apps } = await supabase
           .from('agendamentos')
           .select(`id, data_hora_inicio, status, clientes ( nome, criado_em ), servicos ( nome )`)
+          .eq('barbearia_id', activeBarbeariaId)
           .gte('data_hora_inicio', new Date().toISOString())
           .order('data_hora_inicio', { ascending: true })
           .limit(5);

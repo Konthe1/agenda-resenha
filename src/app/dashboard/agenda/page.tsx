@@ -35,8 +35,30 @@ export default function AgendaPage() {
     async function fetchAgenda() {
       setIsLoading(true);
       try {
-        const { data: barbearias } = await supabase.from('barbearias').select('id').limit(1);
-        const activeBarbeariaId = barbearias?.[0]?.id || '1';
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // 1. Tentar buscar pelo owner_id (Priorizando PRO)
+        let { data: barbData } = await supabase
+          .from('barbearias')
+          .select('id')
+          .eq('owner_id', user.id)
+          .order('plano', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        // 2. Fallback
+        if (!barbData) {
+          const { data: fallbackData } = await supabase
+            .from('barbearias')
+            .select('id')
+            .order('plano', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          barbData = fallbackData;
+        }
+
+        const activeBarbeariaId = barbData?.id || '1';
 
         // Fetch Barbeiros
         let bData = null;
@@ -61,6 +83,7 @@ export default function AgendaPage() {
         const { data } = await supabase
           .from('agendamentos')
           .select(`id, status, valor_total, data_hora_inicio, barbeiro_id, servicos(nome), clientes(nome, telefone), barbeiros(nome, foto_url)`)
+          .eq('barbearia_id', activeBarbeariaId)
           .gte('data_hora_inicio', new Date(currentWeekStart).toISOString())
           // Simplificação: Pegando apenas próximos 7 dias
           .lte('data_hora_inicio', new Date(currentWeekStart.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString());
@@ -119,11 +142,26 @@ export default function AgendaPage() {
 
     setIsSubmitting(true);
     try {
-      // 1. Busca barbearia e servico padrao (simplificado para admin logado, usando o ID "1" provisorio da demo)
-      const { data: barbearias } = await supabase.from('barbearias').select('id').limit(1);
-      const barbeariaId = barbearias?.[0]?.id;
+      // 1. Busca barbearia (Priorizando PRO do user)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      let { data: barbData } = await supabase
+        .from('barbearias')
+        .select('id')
+        .eq('owner_id', user.id)
+        .order('plano', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!barbData) {
+        const { data: fb } = await supabase.from('barbearias').select('id').order('plano', { ascending: false }).limit(1).maybeSingle();
+        barbData = fb;
+      }
+
+      const barbeariaId = barbData?.id;
       
-      const { data: servicos } = await supabase.from('servicos').select('id, preco').limit(1);
+      const { data: servicos } = await supabase.from('servicos').select('id, preco').eq('barbearia_id', barbeariaId).limit(1);
       const servicoObj = servicos?.[0];
 
       if (!barbeariaId || !servicoObj || !novoBarbeiroId) {
