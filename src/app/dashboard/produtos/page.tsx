@@ -30,16 +30,12 @@ export default function ProdutosPage() {
       setIsLoading(true);
       try {
         console.log("Iniciando carregamento de dados do Produto...");
-        
-        // 1. Tentar pegar o usuário logado
-        const { data: sessionData } = await supabase.auth.getSession();
-        const user = sessionData?.session?.user;
+        const { data: { user } } = await supabase.auth.getUser();
         
         let barbearia = null;
         if (user) {
-
-          // 2. Buscar a barbearia deste usuário
-          let { data: barbOwner, error: dbError } = await supabase
+          // 1. Buscar a barbearia deste usuário
+          let { data: barbOwner } = await supabase
             .from('barbearias')
             .select('id, plano')
             .eq('owner_id', user.id)
@@ -47,70 +43,56 @@ export default function ProdutosPage() {
             .limit(1)
             .maybeSingle();
           
-          if (dbError) console.error("Produtos: Erro ao buscar barbearia:", dbError);
           barbearia = barbOwner;
 
-          // Fallback: se não achar pelo owner, tenta a primeira disponível (para demos/novos users)
+          // 2. Fallback: se não achar pelo owner, tenta a primeira disponível (RLS dependente)
           if (!barbearia) {
-            console.log("Produtos: Nenhuma barbearia encontrada para o owner, tentando fallback...");
-            const { data: firstBarb, error: fallbackError } = await supabase
+            console.log("Produtos: Barbearia por owner não encontrada, tentando fallback...");
+            const { data: firstBarb } = await supabase
               .from('barbearias')
               .select('id, plano')
               .order('plano', { ascending: false })
               .limit(1)
               .maybeSingle();
-            
-            if (fallbackError) console.error("Produtos: Erro no fallback:", fallbackError);
             barbearia = firstBarb;
+          }
+
+          // 3. Fallback final: Criar se não existe absolutamente nada (Previne travamentos)
+          if (!barbearia) {
+            console.log("Criando barbearia automática para evitar bloqueios...");
+            const { data: newBarb } = await supabase
+              .from('barbearias')
+              .insert({ 
+                nome: 'Minha Barbearia PRO', 
+                owner_id: user.id,
+                plano: 'PRO', // Forçamos PRO se ele está criando agora
+                plano_ativo: 'PRO',
+                status_pagamento: 'Ativo',
+                slug: 'barber-' + Math.floor(Math.random() * 10000)
+              })
+              .select('id, plano')
+              .single();
+            barbearia = newBarb;
           }
         }
 
         if (barbearia) {
-          console.log("Produtos: Barbearia carregada. Plano:", barbearia.plano);
+          console.log("Produtos: Barbearia final:", barbearia.id, "Plano:", barbearia.plano);
           setBarbeariaId(barbearia.id);
           setPlano((barbearia.plano || 'FREE').toUpperCase());
           
-          // 3. Buscar produtos
-          const { data: prods, error: prodsErr } = await supabase
+          const { data: prods } = await supabase
             .from('produtos')
             .select('*')
             .eq('barbearia_id', barbearia.id)
             .order('nome');
           
-          if (prodsErr) console.error("Erro ao buscar produtos:", prodsErr);
-          if (prods) {
-            console.log(`${prods.length} produtos carregados.`);
-            setProdutos(prods);
-          }
+          if (prods) setProdutos(prods);
         } else {
-          console.log("Produtos: Nenhuma barbearia encontrada no sistema.");
           setPlano('FREE');
         }
-        // 4. Fallback 2: Se ATE AGORA for null, a tabela barbearias está VAZIA. 
-        // Vamos tentar criar uma padrão para o usuário logado não travar.
-        if (!barbearia && user) {
-          console.log("Criando barbearia padrão...");
-          const { data: newBarb, error: createErr } = await supabase
-            .from('barbearias')
-            .insert({ 
-              nome: 'Minha Barbearia', 
-              owner_id: user.id,
-              slug: 'barbearia-' + Math.floor(Math.random() * 1000)
-            })
-            .select('id, plano')
-            .single();
-          
-          if (!createErr) {
-            barbearia = newBarb;
-            console.log("Barbearia padrão criada com ID:", barbearia?.id);
-          } else {
-            console.error("Erro ao criar barbearia padrão:", createErr);
-          }
-        }
-
-
-      } catch (err) {
-        console.error("Erro fatal no loadInitialData:", err);
+      } catch (error) {
+        console.error("Erro ao carregar produtos:", error);
       } finally {
         setIsLoading(false);
       }

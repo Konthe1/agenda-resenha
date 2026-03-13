@@ -283,93 +283,81 @@ export default function ConfiguracoesPage() {
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
-      // Fetch barbers
-      const { data: bData } = await supabase.from('barbeiros').select('*').order('nome');
-      if (bData && bData.length > 0) {
-        setBarbeiros(bData);
-      }
-      
-      // Fetch barbearia profile (Prefer results from the logged-in user)
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
-      
-      // 1. Tentar buscar pelo owner_id (Priorizando PRO)
-      let { data: barbData } = await supabase
-        .from('barbearias')
-        .select('*')
-        .eq('owner_id', userId)
-        .order('plano', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      // 2. Fallback
-      if (!barbData) {
-        const { data: globalBarb } = await supabase
+      try {
+        console.log("Config: Iniciando loadData...");
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setIsLoading(false);
+          return;
+        }
+
+        // 1. Tentar buscar pelo owner_id
+        let { data: barbData } = await supabase
           .from('barbearias')
           .select('*')
+          .eq('owner_id', user.id)
           .order('plano', { ascending: false })
           .limit(1)
           .maybeSingle();
-        barbData = globalBarb;
-      }
-
-      if (barbData) {
-        setBarbeariaPerfil({
-           id: barbData.id,
-           nome: barbData.nome || '',
-           slug: barbData.slug || '',
-           endereco: barbData.endereco || '',
-           logo_url: barbData.logo_url || '',
-           whatsapp: barbData.whatsapp || '',
-           plano: barbData.plano || 'FREE'
-        });
-      }
-      
-      // Fetch services
-      const { data: sData } = await supabase.from('servicos').select('*').order('nome');
-      if (sData && sData.length > 0) {
-        setServicos(sData);
-      }
-
-      // Fetch Audios
-      const { data: aData } = await supabase.from('audios_personalizados').select('*, barbeiros(nome), clientes(nome)').order('criado_em', { ascending: false });
-      if (aData) setPersonalizedAudios(aData);
-
-      // Fetch Clientes (for mapping)
-      const { data: cData } = await supabase.from('clientes').select('id, nome').limit(50);
-      if (cData) setClientes(cData);
-      
-      // Fetch WhatsApp status
-      try {
-        const fetchStatus = await fetch('/api/whatsapp/status');
-        const st = await fetchStatus.json();
         
-        if (st.connected) {
-           setIsWhatsappConnected(true);
-           if (st.number) {
-             setBarbeariaPerfil(prev => ({ ...prev, whatsapp: st.number }));
-           }
-        } else {
-           console.log("WhatsApp desconectado. Tentando 'acordar' automaticamente...");
-           setQrCodeMessage("📱 Tentando reconectar ao WhatsApp automaticamente...");
-           
-           const resConnect = await fetch('/api/whatsapp/connect', { method: 'POST' });
-           const dataConnect = await resConnect.json();
-           
-           if (dataConnect.alreadyConnected) {
-              console.log("WhatsApp reconectado com sucesso!");
-              setIsWhatsappConnected(true);
-              setQrCodeMessage("");
-           } else if (dataConnect.qrcode) {
-              setQrCodeData(dataConnect.qrcode);
-              setQrCodeMessage("Escaneie o QR Code abaixo com o WhatsApp da Barbearia");
-           }
+        // 2. Fallback
+        if (!barbData) {
+          console.log("Config: Barbearia por owner não encontrada, tentando fallback...");
+          const { data: globalBarb } = await supabase
+            .from('barbearias')
+            .select('*')
+            .order('plano', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          barbData = globalBarb;
         }
-      } catch(e) {
-        console.error("Erro ao tentar auto-conectar WhatsApp:", e);
-      }
 
-      setIsLoading(false);
+        if (barbData) {
+          setBarbeariaPerfil({
+             id: barbData.id,
+             nome: barbData.nome || '',
+             slug: barbData.slug || '',
+             endereco: barbData.endereco || '',
+             logo_url: barbData.logo_url || '',
+             whatsapp: barbData.whatsapp || '',
+             plano: (barbData.plano || 'FREE').toUpperCase()
+          });
+
+          // Fetch dependent data
+          const [bRes, sRes, aRes, cRes] = await Promise.all([
+            supabase.from('barbeiros').select('*').eq('barbearia_id', barbData.id).order('nome'),
+            supabase.from('servicos').select('*').eq('barbearia_id', barbData.id).order('nome'),
+            supabase.from('audios_personalizados').select('*, barbeiros(nome), clientes(nome)').eq('barbearia_id', barbData.id).order('criado_em', { ascending: false }),
+            supabase.from('clientes').select('id, nome').eq('barbearia_id', barbData.id).limit(50)
+          ]);
+
+          if (bRes.data) setBarbeiros(bRes.data);
+          if (sRes.data) setServicos(sRes.data);
+          if (aRes.data) setPersonalizedAudios(aRes.data);
+          if (cRes.data) setClientes(cRes.data);
+        }
+
+        // WhatsApp Sync (Background)
+        fetch('/api/whatsapp/status').then(r => r.json()).then(st => {
+           if (st.connected) {
+              setIsWhatsappConnected(true);
+              if (st.number) setBarbeariaPerfil(prev => ({ ...prev, whatsapp: st.number }));
+           } else {
+              setQrCodeMessage("📱 Sincronizando WhatsApp...");
+              fetch('/api/whatsapp/connect', { method: 'POST' }).then(r => r.json()).then(dataConnect => {
+                 if (dataConnect.alreadyConnected) setIsWhatsappConnected(true);
+                 else if (dataConnect.qrcode) {
+                    setQrCodeData(dataConnect.qrcode);
+                    setQrCodeMessage("Escaneie o QR Code abaixo");
+                 }
+              }).catch(() => {});
+           }
+        }).catch(() => {});
+      } catch (e) {
+        console.error("Erro Config:", e);
+      } finally {
+        setIsLoading(false);
+      }
     }
     loadData();
   }, []);

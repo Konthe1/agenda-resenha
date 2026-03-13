@@ -21,6 +21,7 @@ export default function DashboardOverview() {
   useEffect(() => {
     async function loadData() {
       try {
+        console.log("Dashboard: Iniciando loadData...");
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           setIsLoading(false);
@@ -29,8 +30,8 @@ export default function DashboardOverview() {
 
         console.log("Dashboard: Usuário logado:", user.email);
 
-        // 1. Tentar buscar pelo owner_id (Priorizando PRO)
-        let { data: barbData, error: dbError } = await supabase
+        // 1. Tentar buscar pelo owner_id
+        let { data: barbData } = await supabase
           .from('barbearias')
           .select('id, plano')
           .eq('owner_id', user.id)
@@ -38,46 +39,57 @@ export default function DashboardOverview() {
           .limit(1)
           .maybeSingle();
 
-        if (dbError) console.error("Dashboard: Erro ao buscar barbearia:", dbError);
-
-        // 2. Fallback
+        // 2. Fallback: buscar qualquer barbearia
         if (!barbData) {
-          console.log("Dashboard: Barbearia por owner não encontrada, tentando fallback...");
-          const { data: fallbackData, error: fallbackError } = await supabase
+          const { data: fallbackData } = await supabase
             .from('barbearias')
             .select('id, plano')
             .order('plano', { ascending: false })
             .limit(1)
             .maybeSingle();
-          
-          if (fallbackError) console.error("Dashboard: Erro no fallback:", fallbackError);
           barbData = fallbackData;
         }
 
-        const activeBarbeariaId = barbData?.id || '1';
+        // 3. Fallback Final: Criar se não existir nada
+        if (!barbData) {
+          const { data: newBarb } = await supabase
+            .from('barbearias')
+            .insert({ 
+              nome: 'Minha Barbearia', 
+              owner_id: user.id,
+              plano: 'PRO',
+              plano_ativo: 'PRO',
+              status_pagamento: 'Ativo',
+              slug: 'home-' + Math.floor(Math.random() * 10000)
+            })
+            .select('id, plano')
+            .single();
+          barbData = newBarb;
+        }
 
-        // Fetch from Supabase
-        const { data: apps } = await supabase
-          .from('agendamentos')
-          .select(`id, data_hora_inicio, status, clientes ( nome, criado_em ), servicos ( nome )`)
-          .eq('barbearia_id', activeBarbeariaId)
-          .gte('data_hora_inicio', new Date().toISOString())
-          .order('data_hora_inicio', { ascending: true })
-          .limit(5);
+        const activeBarbeariaId = barbData?.id;
 
-        if (apps) {
-          setAppointments(apps);
-          
-          // Cálculo real de métricas (Simplificado para hoje)
-          const faturamentoTotal = apps.reduce((acc: number, curr: any) => acc + (curr.valor_total || 0), 0);
-          setMetrics({ 
-            agendamentos: apps.length, 
-            faturamento: faturamentoTotal, 
-            novos: apps.length > 0 ? 1 : 0 
-          });
+        if (activeBarbeariaId) {
+          const { data: apps } = await supabase
+            .from('agendamentos')
+            .select(`id, data_hora_inicio, status, clientes ( nome, criado_em ), servicos ( nome )`)
+            .eq('barbearia_id', activeBarbeariaId)
+            .gte('data_hora_inicio', new Date().toISOString())
+            .order('data_hora_inicio', { ascending: true })
+            .limit(5);
+
+          if (apps) {
+            setAppointments(apps);
+            const faturamentoTotal = apps.reduce((acc: number, curr: any) => acc + (curr.valor_total || 0), 0);
+            setMetrics({ 
+              agendamentos: apps.length, 
+              faturamento: faturamentoTotal, 
+              novos: apps.length > 0 ? 1 : 0 
+            });
+          }
         }
       } catch (err) {
-        console.error("DB Error", err);
+        console.error("Dashboard DB Error:", err);
       } finally {
         setIsLoading(false);
       }

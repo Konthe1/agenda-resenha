@@ -37,14 +37,10 @@ export default function MarketingPage() {
       setIsLoading(true);
       try {
         console.log("Iniciando carregamento de dados de marketing...");
-        const { data: sessionData } = await supabase.auth.getSession();
-        const user = sessionData?.session?.user;
+        const { data: { user } } = await supabase.auth.getUser();
         
         let barbearia = null;
-
         if (user) {
-
-
           // 1. Tentar buscar pelo owner_id
           const { data: barbOwner } = await supabase
             .from('barbearias')
@@ -77,28 +73,26 @@ export default function MarketingPage() {
             cashback_ativa: barbearia.cashback_ativo ?? true,
             cashback_percentual: barbearia.cashback_percentual ?? 5
           });
-        }
 
-        // 2. Buscar Serviços (Sem filtro rígido, igual à tela de configurações para garantir que apareçam)
-        const { data: servData, error: servError } = await supabase
-          .from('servicos')
-          .select('id, nome')
-          .order('nome');
-        
-        if (servError) console.error("Erro ao buscar serviços:", servError);
-        if (servData) {
-          console.log(`${servData.length} serviços encontrados.`);
-          setServicos(servData);
-        }
+          // 2. Buscar Serviços
+          const { data: servData } = await supabase
+            .from('servicos')
+            .select('id, nome')
+            .eq('barbearia_id', barbearia.id)
+            .order('nome');
+          
+          if (servData) setServicos(servData);
 
-        // 3. Métricas Básicas
-        const { count } = await supabase.from('clientes').select('*', { count: 'exact', head: true });
-        if (count) {
-          setTotalClientes(count);
-          setInativosCount(0); // Será real quando implementarmos a query de inativos
+          // 3. Métricas Básicas
+          const { count } = await supabase
+            .from('clientes')
+            .select('*', { count: 'exact', head: true })
+            .eq('barbearia_id', barbearia.id);
+          
+          if (count !== null) setTotalClientes(count);
         }
       } catch (error) {
-        console.error("Erro ao carregar dados de marketing:", error);
+        console.error("Erro Marketing:", error);
       } finally {
         setIsLoading(false);
       }

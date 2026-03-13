@@ -46,14 +46,13 @@ export default function DashboardLayout({
     async function fetchBarbearia() {
       try {
         console.log("Layout: Iniciando fetchBarbearia...");
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
         
-        if (!user) {
-          console.log("Layout: Nenhum usuário encontrado no Auth.");
+        if (authError || !user) {
+          console.log("Layout: Erro ou usuário não encontrado no Auth:", authError);
+          setBarbeariaPerfil(prev => ({ ...prev, nome: 'Visitante' }));
           return;
         }
-
-
 
         console.log("Layout: Usuário logado:", user?.email);
 
@@ -68,17 +67,15 @@ export default function DashboardLayout({
 
         if (dbError) console.error("Layout: Erro ao buscar barbearia por owner_id:", dbError);
 
-        // 2. Fallback: buscar qualquer barbearia
+        // 2. Fallback: buscar qualquer barbearia (Se RLS permitir)
         if (!data) {
           console.log("Layout: Barbearia por owner não encontrada, tentando fallback...");
-          const { data: fallbackData, error: fallbackError } = await supabase
+          const { data: fallbackData } = await supabase
             .from('barbearias')
             .select('id, nome, logo_url, plano, endereco, whatsapp')
             .order('plano', { ascending: false })
             .limit(1)
             .maybeSingle();
-          
-          if (fallbackError) console.error("Layout: Erro no fallback de barbearia:", fallbackError);
           data = fallbackData;
         }
 
@@ -92,38 +89,41 @@ export default function DashboardLayout({
             endereco: data.endereco || '',
             whatsapp: data.whatsapp || ''
           });
+        } else {
+          console.log("Layout: Nenhuma barbearia encontrada no DB ou RLS bloqueando.");
+          setBarbeariaPerfil({
+            id: '',
+            nome: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Minha Barbearia',
+            logo_url: '',
+            plano: 'FREE',
+            endereco: '',
+            whatsapp: ''
+          });
         }
 
-        // 4. Sincronização e Despertar WhatsApp
+        // 4. Sincronização WhatsApp (Silenciosa)
         try {
-          const resSt = await fetch('/api/whatsapp/status');
-          if (resSt.ok) {
-            const stData = await resSt.json();
-            
-            // Se estiver conectado, puxamos o número real da API Evolution
+          fetch('/api/whatsapp/status').then(res => res.json()).then(stData => {
             if (stData.connected && stData.number) {
-              console.log("Layout: WhatsApp conectado na API:", stData.number);
               setBarbeariaPerfil(prev => ({ ...prev, whatsapp: stData.number }));
-
-              // Se o número da API for diferente do que está no banco, atualizamos o banco para manter a sincronia real
-              if (data && stData.number !== data.whatsapp) {
-                console.log("Layout: Atualizando número do WhatsApp no banco de dados para:", stData.number);
-                await supabase
-                  .from('barbearias')
-                  .update({ whatsapp: stData.number })
-                  .eq('id', data.id);
-              }
-            } else if (stData.state === 'close' || !stData.connected) {
-              // Se estiver fechado, tentamos um "despertar" silencioso via connect
-              console.log("Layout: WhatsApp desconectado ou em standby, tentando despertar...");
-              fetch('/api/whatsapp/connect', { method: 'POST' }).catch(err => console.error("Erro ao despertar bot:", err));
+            } else {
+              fetch('/api/whatsapp/connect', { method: 'POST' }).catch(() => {});
             }
-          }
+          }).catch(() => {});
         } catch (e) {
-          console.error("Layout: Erro ao sincronizar WhatsApp:", e);
+          // Ignora erro de sync no layout principal
         }
       } catch (error) {
         console.error("Layout: Erro crítico em fetchBarbearia:", error);
+        setBarbeariaPerfil(prev => ({ ...prev, nome: 'Erro ao Carregar' }));
+      } finally {
+        // Garantia final de que o nome não ficará como "Carregando..."
+        setBarbeariaPerfil(prev => {
+          if (prev.nome === 'Carregando...') {
+            return { ...prev, nome: 'Barbearia' };
+          }
+          return prev;
+        });
       }
     }
     fetchBarbearia();
