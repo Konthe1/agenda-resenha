@@ -7,14 +7,33 @@ export default function PlanosPage() {
   const [assinantes, setAssinantes] = useState<any[]>([]);
   const [planos, setPlanos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [plano, setPlano] = useState<string>('FREE');
+  const [barbeariaId, setBarbeariaId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
-      const { data: pData } = await supabase.from('planos').select('*').order('preco', { ascending: false });
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: barbData } = await supabase
+        .from('barbearias')
+        .select('id, plano')
+        .eq('owner_id', user.id)
+        .maybeSingle();
+
+      if (barbData) {
+        setBarbeariaId(barbData.id);
+        setPlano(barbData.plano || 'FREE');
+      }
+
+      const activeBarbeariaId = barbData?.id || '1';
+
+      const { data: pData } = await supabase.from('planos').select('*').eq('barbearia_id', activeBarbeariaId).order('preco', { ascending: false });
       if (pData) setPlanos(pData);
 
-      const { data: aData } = await supabase.from('assinantes').select('*, clientes(nome, telefone), planos(nome)').order('criado_em', { ascending: false });
+      const { data: aData } = await supabase.from('assinantes').select('*, clientes(nome, telefone), planos(nome)').eq('barbearia_id', activeBarbeariaId).order('criado_em', { ascending: false });
       if (aData) setAssinantes(aData);
       
       setIsLoading(false);
@@ -98,8 +117,37 @@ export default function PlanosPage() {
     alert(`💳 Mensalidade Ativada!\n\nUm disparo de WhatsApp (Template de Assinaturas PRO) acaba de ser enviado para o cliente ${novoAssinanteNome} no número ${novoAssinanteTel}.`);
   };
 
+  const UpgradeOverlay = () => (
+    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)', borderRadius: '16px', background: 'rgba(0,0,0,0.4)', padding: '2rem', textAlign: 'center' }}>
+      <div className="section-card animate-fade-in" style={{ maxWidth: '540px', border: '2px solid #f59e0b', boxShadow: '0 0 30px rgba(245, 158, 11, 0.3)', background: 'var(--bg-secondary)' }}>
+        <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🎟️</div>
+        <h2 style={{ fontSize: '1.8rem', color: '#f59e0b', marginBottom: '1rem' }}>Recorrência e Assinaturas PRO</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: '1.6' }}>
+          Venda pacotes mensais e garanta o faturamento da sua barbearia. Com o módulo de Assinaturas, você cria **planos de recorrência** e automatiza cobranças via WhatsApp!
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', textAlign: 'left', marginBottom: '2rem', fontSize: '0.9rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Planos Customizados</div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Gestão de Mensalistas</div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Notificação de Vencimento</div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Controle de Créditos</div>
+        </div>
+        <button 
+           className="btn-primary" 
+           style={{ padding: '1.2rem', fontSize: '1.1rem', fontWeight: 'bold', background: 'linear-gradient(135deg, #f59e0b, #d97706)', border: 'none', boxShadow: '0 4px 15px rgba(245, 158, 11, 0.4)' }}
+           onClick={() => window.location.href = '/dashboard/planos'}
+        >
+          🚀 Liberar Assinaturas Premium
+        </button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="animate-fade-in">
+    <div className="planos-page" style={{ position: 'relative' }}>
+      {plano !== 'PRO' && <UpgradeOverlay />}
+      
+      <div style={{ filter: plano !== 'PRO' ? 'grayscale(1) opacity(0.3)' : 'none', pointerEvents: plano !== 'PRO' ? 'none' : 'auto' }}>
+        <div className="animate-fade-in">
       <div className="page-header" style={{ marginBottom: '2rem' }}>
         <div className="page-title">
           <h1>Planos e Mensalidades</h1>
@@ -247,6 +295,8 @@ export default function PlanosPage() {
            </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -11,6 +11,7 @@ export default function MarketingPage() {
   const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [barbeariaId, setBarbeariaId] = useState<string | null>(null);
+  const [plano, setPlano] = useState<string>('FREE');
   const [servicos, setServicos] = useState<any[]>([]);
   
   // Advanced Filtros
@@ -73,6 +74,7 @@ export default function MarketingPage() {
 
         if (barbearia) {
           setBarbeariaId(barbearia.id);
+          setPlano(barbearia.plano || 'FREE');
           setSettings({
             fidelidade_ativa: barbearia.fidelidade_ativa ?? true,
             fidelidade_cortes: barbearia.fidelidade_cortes ?? 10,
@@ -161,9 +163,38 @@ export default function MarketingPage() {
     return servicos.find(s => s.id === id)?.nome || "Corte Grátis";
   };
 
+  const UpgradeOverlay = () => (
+    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)', borderRadius: '16px', background: 'rgba(0,0,0,0.4)', padding: '2rem', textAlign: 'center' }}>
+      <div className="section-card animate-fade-in" style={{ maxWidth: '500px', border: '2px solid var(--accent-primary)', boxShadow: '0 0 30px rgba(249, 115, 22, 0.3)', background: 'var(--bg-secondary)' }}>
+        <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>💎</div>
+        <h2 style={{ fontSize: '1.8rem', color: 'var(--accent-primary)', marginBottom: '1rem' }}>Recurso Exclusivo Plano PRO</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: '1.6' }}>
+          O módulo de <strong>Marketing, Fidelidade e Cashback</strong> está disponível apenas para membros PRO. Turbine seu faturamento e fidelize seus clientes hoje mesmo!
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', textAlign: 'left', marginBottom: '2rem', fontSize: '0.9rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Fidelidade Digital</div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Cashback Automático</div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Disparo em Massa</div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Relatórios VIP</div>
+        </div>
+        <button 
+           className="btn-primary" 
+           style={{ padding: '1.2rem', fontSize: '1.1rem', fontWeight: 'bold', boxShadow: '0 4px 15px rgba(249, 115, 22, 0.4)' }}
+           onClick={() => window.location.href = '/dashboard/planos'}
+        >
+          🚀 Fazer Upgrade Agora
+        </button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="animate-fade-in">
-      <div className="page-header">
+    <div className="marketing-page" style={{ position: 'relative' }}>
+      {plano !== 'PRO' && <UpgradeOverlay />}
+      
+      <div style={{ filter: plano !== 'PRO' ? 'grayscale(1) opacity(0.3)' : 'none', pointerEvents: plano !== 'PRO' ? 'none' : 'auto' }}>
+        <div className="animate-fade-in">
+          <div className="page-header">
         <div className="page-title">
           <h1>Marketing & Fidelização <span style={{ fontSize: '0.6em', background: 'linear-gradient(135deg, #f97316, #eab308)', padding: '4px 8px', borderRadius: '4px', verticalAlign: 'middle', marginLeft: '10px', color: 'white' }}>PRO</span></h1>
           <p>Retenha clientes e dispare promoções pelo WhatsApp</p>
@@ -474,6 +505,8 @@ export default function MarketingPage() {
               </div>
             </div>
           )}
+        </div>
+        </div>
         </div>
       </div>
     </div>

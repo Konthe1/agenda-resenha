@@ -31,7 +31,47 @@ export default function DashboardLayout({
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [barbeariaPerfil, setBarbeariaPerfil] = useState({
+    nome: 'Resenha Barber',
+    logo_url: '',
+    plano: 'PRO',
+    endereco: '',
+    whatsapp: ''
+  });
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
+  useEffect(() => {
+    async function fetchBarbearia() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from('barbearias')
+        .select('nome, logo_url, plano, endereco, whatsapp')
+        .eq('owner_id', user.id)
+        .maybeSingle();
+
+      if (data) {
+        setBarbeariaPerfil({
+          nome: data.nome || 'Resenha Barber',
+          logo_url: data.logo_url || '',
+          plano: data.plano || 'FREE',
+          endereco: data.endereco || 'Endereço não cadastrado',
+          whatsapp: data.whatsapp || 'Não conectado'
+        });
+      }
+    }
+    fetchBarbearia();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/';
+  };
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  };
   useEffect(() => {
     // Escuta eventos de INSERT na tabela agendamentos (Canal ÚNICO para evitar colisão com a agenda)
     const channel = supabase
@@ -235,19 +275,31 @@ export default function DashboardLayout({
           </Link>
           <Link href="/dashboard/financeiro" className={`nav-item ${pathname === '/dashboard/financeiro' ? 'active' : ''}`} onClick={() => setIsMobileSidebarOpen(false)}>
             <span className="nav-icon">💰</span>
-            <span>Financeiro</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <span>Financeiro</span>
+              <span className="pro-badge">PRO</span>
+            </div>
           </Link>
           <Link href="/dashboard/marketing" className={`nav-item ${pathname === '/dashboard/marketing' ? 'active' : ''}`} onClick={() => setIsMobileSidebarOpen(false)}>
             <span className="nav-icon">🎯</span>
-            <span>Marketing (PRO)</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <span>Marketing</span>
+              <span className="pro-badge">PRO</span>
+            </div>
           </Link>
           <Link href="/dashboard/produtos" className={`nav-item ${pathname === '/dashboard/produtos' ? 'active' : ''}`} onClick={() => setIsMobileSidebarOpen(false)}>
             <span className="nav-icon">🛍️</span>
-            <span>Produtos (PRO)</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <span>Produtos</span>
+              <span className="pro-badge">PRO</span>
+            </div>
           </Link>
           <Link href="/dashboard/planos" className={`nav-item ${pathname === '/dashboard/planos' ? 'active' : ''}`} onClick={() => setIsMobileSidebarOpen(false)}>
             <span className="nav-icon">🎟️</span>
-            <span>Assinaturas (PRO)</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <span>Assinaturas</span>
+              <span className="pro-badge">PRO</span>
+            </div>
           </Link>
           <Link href="/dashboard/configuracoes" className={`nav-item ${pathname === '/dashboard/configuracoes' ? 'active' : ''}`} onClick={() => setIsMobileSidebarOpen(false)}>
             <span className="nav-icon">⚙️</span>
@@ -260,15 +312,111 @@ export default function DashboardLayout({
         </nav>
 
         <div className="sidebar-footer">
-          <div className="user-profile">
-            <div className="avatar">RS</div>
+          <div className="user-profile" onClick={() => setIsProfileModalOpen(true)} style={{ cursor: 'pointer' }}>
+            {barbeariaPerfil.logo_url ? (
+              <img src={barbeariaPerfil.logo_url} alt="Profile" className="avatar" style={{ objectFit: 'cover' }} />
+            ) : (
+              <div className="avatar" style={{ background: 'var(--accent-primary)', color: 'white' }}>
+                {getInitials(barbeariaPerfil.nome)}
+              </div>
+            )}
             <div className="user-info">
-              <span className="user-name">Resenha Barber</span>
-              <span className="user-role">Plano Pro</span>
+              <span className="user-name">{barbeariaPerfil.nome}</span>
+              <span className="user-role" style={{ 
+                color: barbeariaPerfil.plano === 'PRO' ? '#f97316' : 'var(--text-secondary)',
+                fontWeight: barbeariaPerfil.plano === 'PRO' ? 'bold' : 'normal'
+              }}>
+                Plano {barbeariaPerfil.plano}
+              </span>
             </div>
           </div>
         </div>
       </aside>
+
+      {/* Modal de Perfil Premium */}
+      {isProfileModalOpen && (
+        <div className="modal-overlay" style={{ zIndex: 1100 }}>
+          <div className="section-card animate-scale-in" style={{ maxWidth: '450px', width: '90%', padding: '2rem', background: 'var(--bg-secondary)', border: '1px solid var(--accent-primary)', boxShadow: '0 0 40px rgba(0,0,0,0.5)', position: 'relative' }}>
+            <button 
+              onClick={() => setIsProfileModalOpen(false)}
+              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }}
+            >
+              ✕
+            </button>
+
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div style={{ position: 'relative', display: 'inline-block', marginBottom: '1rem' }}>
+                {barbeariaPerfil.logo_url ? (
+                  <img src={barbeariaPerfil.logo_url} alt="Logo" style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--accent-primary)' }} />
+                ) : (
+                  <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--accent-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 'bold' }}>
+                    {getInitials(barbeariaPerfil.nome)}
+                  </div>
+                )}
+                <div style={{ position: 'absolute', bottom: '0', right: '0', background: '#10b981', width: '25px', height: '25px', borderRadius: '50%', border: '3px solid var(--bg-secondary)' }}></div>
+              </div>
+              <h2 style={{ fontSize: '1.5rem', marginBottom: '0.2rem' }}>{barbeariaPerfil.nome}</h2>
+              <span style={{ 
+                background: barbeariaPerfil.plano === 'PRO' ? 'linear-gradient(135deg, #f97316, #eab308)' : 'var(--bg-tertiary)',
+                color: 'white',
+                padding: '4px 12px',
+                borderRadius: '20px',
+                fontSize: '0.8rem',
+                fontWeight: 'bold',
+                textTransform: 'uppercase'
+              }}>
+                Plano {barbeariaPerfil.plano}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ fontSize: '1.5rem', opacity: 0.7 }}>📍</div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Endereço</div>
+                  <div style={{ fontSize: '0.95rem' }}>{barbeariaPerfil.endereco || 'Não informado'}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ fontSize: '1.5rem', opacity: 0.7 }}>💬</div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>WhatsApp Conectado</div>
+                  <div style={{ fontSize: '0.95rem' }}>{barbeariaPerfil.whatsapp || 'Nenhum número conectado'}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ fontSize: '1.5rem', opacity: 0.7 }}>🎫</div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Status da Assinatura</div>
+                  <div style={{ fontSize: '0.95rem', color: '#10b981', fontWeight: 'bold' }}>Ativa (Vence em 30 dias)</div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+              <button 
+                className="btn-primary" 
+                style={{ flex: 1, padding: '1rem' }}
+                onClick={() => {
+                  setIsProfileModalOpen(false);
+                  window.location.href = '/dashboard/configuracoes';
+                }}
+              >
+                ⚙️ Perfil
+              </button>
+              <button 
+                className="btn-text" 
+                style={{ flex: 1, padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 'var(--radius-md)', fontWeight: 'bold' }}
+                onClick={handleLogout}
+              >
+                🚪 Sair da Conta
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <main className="main-content">

@@ -7,6 +7,7 @@ export default function ProdutosPage() {
   const [produtos, setProdutos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [barbeariaId, setBarbeariaId] = useState<string | null>(null);
+  const [plano, setPlano] = useState<string>('FREE');
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategoria, setFilterCategoria] = useState("Todos");
   
@@ -41,7 +42,7 @@ export default function ProdutosPage() {
           // 2. Buscar a barbearia deste usuário
           const { data: barbOwner } = await supabase
             .from('barbearias')
-            .select('id')
+            .select('id, plano')
             .eq('owner_id', user.id)
             .maybeSingle();
           barbearia = barbOwner;
@@ -52,7 +53,7 @@ export default function ProdutosPage() {
           console.log("Buscando qualquer barbearia como fallback...");
           const { data: firstBarb } = await supabase
             .from('barbearias')
-            .select('id')
+            .select('id, plano')
             .limit(1)
             .maybeSingle();
           barbearia = firstBarb;
@@ -69,7 +70,7 @@ export default function ProdutosPage() {
               owner_id: user.id,
               slug: 'barbearia-' + Math.floor(Math.random() * 1000)
             })
-            .select('id')
+            .select('id, plano')
             .single();
           
           if (!createErr) {
@@ -83,6 +84,7 @@ export default function ProdutosPage() {
         if (barbearia) {
           console.log("Barbearia ID definido:", barbearia.id);
           setBarbeariaId(barbearia.id);
+          setPlano(barbearia.plano || 'FREE');
           
           // 3. Buscar produtos
           const { data: prods, error: prodsErr } = await supabase
@@ -245,8 +247,37 @@ export default function ProdutosPage() {
   const totalPotentialProfit = produtos.reduce((acc, p) => acc + ((p.preco - (p.preco_custo || 0)) * p.estoque), 0);
   const lowStockCount = produtos.filter(p => p.estoque <= (p.estoque_minimo || 5)).length;
 
+  const UpgradeOverlay = () => (
+    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)', borderRadius: '16px', background: 'rgba(0,0,0,0.4)', padding: '2rem', textAlign: 'center' }}>
+      <div className="section-card animate-fade-in" style={{ maxWidth: '500px', border: '2px solid var(--accent-primary)', boxShadow: '0 0 30px rgba(249, 115, 22, 0.3)', background: 'var(--bg-secondary)' }}>
+        <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>💎</div>
+        <h2 style={{ fontSize: '1.8rem', color: 'var(--accent-primary)', marginBottom: '1rem' }}>Gerenciamento de Produtos PRO</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: '1.6' }}>
+          O controle de <strong>Estoque, Vendas e Produtos Premium</strong> é uma exclusividade do Plano PRO. Profissionalize sua gestão e venda mais produtos!
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', textAlign: 'left', marginBottom: '2rem', fontSize: '0.9rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Controle de Estoque</div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Vendas Rápidas</div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Alerta de Reposição</div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Lucro Potencial</div>
+        </div>
+        <button 
+           className="btn-primary" 
+           style={{ padding: '1.2rem', fontSize: '1.1rem', fontWeight: 'bold', boxShadow: '0 4px 15px rgba(249, 115, 22, 0.4)' }}
+           onClick={() => window.location.href = '/dashboard/planos'}
+        >
+          🚀 Liberar Módulo de Produtos
+        </button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="animate-fade-in">
+    <div className="produtos-page" style={{ position: 'relative' }}>
+      {plano !== 'PRO' && <UpgradeOverlay />}
+      
+      <div style={{ filter: plano !== 'PRO' ? 'grayscale(1) opacity(0.3)' : 'none', pointerEvents: plano !== 'PRO' ? 'none' : 'auto' }}>
+        <div className="animate-fade-in">
       <div className="page-header" style={{ marginBottom: '2rem' }}>
         <div className="page-title">
           <h1>Produtos e Estoque</h1>
@@ -426,6 +457,8 @@ export default function ProdutosPage() {
            </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }
