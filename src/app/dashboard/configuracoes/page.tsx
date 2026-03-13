@@ -41,6 +41,14 @@ export default function ConfiguracoesPage() {
   const [scheduleData, setScheduleData] = useState<any>(defaultHorarios);
   const [isSavingSchedule, setIsSavingSchedule] = useState(false);
 
+  // States for Audio Module
+  const [personalizedAudios, setPersonalizedAudios] = useState<any[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [newAudioData, setNewAudioData] = useState({ barbeiro_id: '', cliente_id: '', gatilho: 'confirmacao' });
+  const [clientes, setClientes] = useState<any[]>([]);
+
   // Load correct schedule object when dropdown changes
   useEffect(() => {
     if (selectedScheduleId === 'geral') {
@@ -161,6 +169,114 @@ export default function ConfiguracoesPage() {
      }
   };
 
+  // Audio Module Logic
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        setAudioChunks([]); // reset for next time
+        // Upload to Supabase
+        await saveAudio(blob);
+      };
+
+      setMediaRecorder(recorder);
+      setAudioChunks([]);
+      recorder.start();
+      setIsRecording(true);
+    } catch (e: any) {
+      alert("Permissão de microfone negada ou erro: " + e.message);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder) {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+    }
+  };
+
+  const saveAudio = async (blob: Blob) => {
+    if (!newAudioData.barbeiro_id) {
+      alert("Selecione um barbeiro antes de gravar.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const fileName = `${Date.now()}-audio.webm`;
+      const { error: uploadError } = await supabase.storage
+        .from('barbearia-audios')
+        .upload(fileName, blob);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('barbearia-audios')
+        .getPublicUrl(fileName);
+
+      const payload = {
+        barbearia_id: barbeariaPerfil.id,
+        barbeiro_id: newAudioData.barbeiro_id,
+        cliente_id: newAudioData.cliente_id || null,
+        gatilho: newAudioData.gatilho,
+        audio_url: urlData.publicUrl
+      };
+
+      const { error: dbError } = await supabase.from('audios_personalizados').insert(payload);
+      if (dbError) throw dbError;
+
+      // Refresh list
+      const { data: aData } = await supabase.from('audios_personalizados').select('*, barbeiros(nome), clientes(nome)').order('criado_em', { ascending: false });
+      if (aData) setPersonalizedAudios(aData);
+      
+      alert("Áudio gravado e salvo com sucesso!");
+    } catch (e: any) {
+      alert("Erro ao salvar áudio: " + e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteAudio = async (audioId: string) => {
+    if (!confirm("Deseja realmente excluir este áudio?")) return;
+    try {
+      await supabase.from('audios_personalizados').delete().eq('id', audioId);
+      setPersonalizedAudios(personalizedAudios.filter(a => a.id !== audioId));
+    } catch (e: any) {
+      alert("Erro ao excluir áudio: " + e.message);
+    }
+  };
+
+  const handleDeleteBarber = async (id: string) => {
+    if (!confirm("Remover profissional?")) return;
+    try {
+      const { error } = await supabase.from('barbeiros').delete().eq('id', id);
+      if (error) throw error;
+      setBarbeiros(barbeiros.filter(b => b.id !== id));
+    } catch (e: any) {
+      alert("Erro: " + e.message);
+    }
+  };
+
+  const handleDeleteService = async (id: string) => {
+    if (!confirm("Remover serviço?")) return;
+    try {
+      const { error } = await supabase.from('servicos').delete().eq('id', id);
+      if (error) throw error;
+      setServicos(servicos.filter(s => s.id !== id));
+    } catch (e: any) {
+      alert("Erro: " + e.message);
+    }
+  };
+
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
@@ -208,6 +324,14 @@ export default function ConfiguracoesPage() {
       if (sData && sData.length > 0) {
         setServicos(sData);
       }
+
+      // Fetch Audios
+      const { data: aData } = await supabase.from('audios_personalizados').select('*, barbeiros(nome), clientes(nome)').order('criado_em', { ascending: false });
+      if (aData) setPersonalizedAudios(aData);
+
+      // Fetch Clientes (for mapping)
+      const { data: cData } = await supabase.from('clientes').select('id, nome').limit(50);
+      if (cData) setClientes(cData);
       
       // Fetch WhatsApp status
       try {
@@ -314,17 +438,23 @@ export default function ConfiguracoesPage() {
               🧔 Equipe e Barbeiros
             </button>
             <button 
-              onClick={() => setActiveTab("horarios")}
-              style={{ padding: '1rem 1.5rem', textAlign: 'left', background: activeTab === 'horarios' ? 'var(--bg-secondary)' : 'transparent', border: 'none', color: activeTab === 'horarios' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'horarios' ? '600' : '400', cursor: 'pointer', borderLeft: activeTab === 'horarios' ? '3px solid var(--accent-primary)' : '3px solid transparent' }}
-            >
-              ⏰ Horários de Funcionamento
-            </button>
-            <button 
-              onClick={() => setActiveTab("integracoes")}
-              style={{ padding: '1rem 1.5rem', textAlign: 'left', background: activeTab === 'integracoes' ? 'var(--bg-secondary)' : 'transparent', border: 'none', color: activeTab === 'integracoes' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'integracoes' ? '600' : '400', cursor: 'pointer', borderLeft: activeTab === 'integracoes' ? '3px solid var(--accent-primary)' : '3px solid transparent' }}
-            >
-              🤖 Integrações (WhatsApp)
-            </button>
+             className={`tab-btn ${activeTab === 'horarios' ? 'active' : ''}`}
+             onClick={() => setActiveTab('horarios')}
+          >
+            ⏰ Horários
+          </button>
+          <button 
+             className={`tab-btn ${activeTab === 'audios' ? 'active' : ''}`}
+             onClick={() => setActiveTab('audios')}
+          >
+            🎤 Áudios (Novo!)
+          </button>
+          <button 
+             className={`tab-btn ${activeTab === 'whatsapp' ? 'active' : ''}`}
+             onClick={() => setActiveTab('whatsapp')}
+          >
+            🤖 WhatsApp
+          </button>
           </div>
         </div>
 

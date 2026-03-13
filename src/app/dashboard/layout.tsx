@@ -117,7 +117,11 @@ export default function DashboardLayout({
       await fetch('/api/whatsapp/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payloadWpp)
+        body: JSON.stringify({
+          ...payloadWpp,
+          agendamentoId: newBooking.id,
+          trigger: 'confirmacao'
+        })
       });
 
       alert("Agendamento confirmado com sucesso! O cliente foi avisado via WhatsApp.");
