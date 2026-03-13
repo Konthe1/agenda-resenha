@@ -17,11 +17,25 @@ export default function PlanosPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: barbData } = await supabase
+      // 1. Tentar buscar pelo owner_id (Priorizando PRO se houver duplicatas)
+      let { data: barbData } = await supabase
         .from('barbearias')
         .select('id, plano')
         .eq('owner_id', user.id)
+        .order('plano', { ascending: false })
+        .limit(1)
         .maybeSingle();
+
+      // 2. Fallback
+      if (!barbData) {
+        const { data: fallbackData } = await supabase
+          .from('barbearias')
+          .select('id, plano')
+          .order('plano', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        barbData = fallbackData;
+      }
 
       if (barbData) {
         setBarbeariaId(barbData.id);
