@@ -113,7 +113,6 @@ export default function Home() {
                    <strong style={{ fontSize: '0.9rem' }}>Notificação WhatsApp</strong>
                 </div>
                 <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', overflow: 'hidden' }}>
-                   {/* We reuse dashboard demo as it shows the notification event clearly */}
                    <video src="/videos/dashboard_demo.webp" autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
              </div>
