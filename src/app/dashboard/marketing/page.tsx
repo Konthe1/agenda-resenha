@@ -9,14 +9,24 @@ export default function MarketingPage() {
   const [totalClientes, setTotalClientes] = useState(0);
   const [promoMessage, setPromoMessage] = useState("Fala chefe, tudo certo? Senti sua falta aqui na Resenha Barber! Tem um cupom de 20% de desconto te esperando pra essa semana. Bora dar um talento no visual? Agende aqui: agendaresenha.com/resenhabarber");
   const [isSending, setIsSending] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [barbeariaId, setBarbeariaId] = useState<string | null>(null);
+  const [servicos, setServicos] = useState<any[]>([]);
   
   // Advanced Filtros
   const [filtroAlvo, setFiltroAlvo] = useState("inativos"); 
   
-  // States for Editable Fidelity Rule
+  // Marketing Settings (Dynamic from DB)
+  const [settings, setSettings] = useState({
+    fidelidade_ativa: true,
+    fidelidade_cortes: 10,
+    fidelidade_premio_servico_id: '',
+    cashback_ativa: true,
+    cashback_percentual: 5
+  });
+  
   const [isEditingRule, setIsEditingRule] = useState(false);
-  const [ruleCortes, setRuleCortes] = useState(10);
-  const [rulePremio, setRulePremio] = useState("Corte Grátis");
+  const [isSaving, setIsSaving] = useState(false);
   
   // Mock Data for UI demonstration
   const [ranking, setRanking] = useState([
@@ -33,14 +43,86 @@ export default function MarketingPage() {
 
   useEffect(() => {
     async function fetchDados() {
-      const { count } = await supabase.from('clientes').select('*', { count: 'exact', head: true });
-      if (count) {
-        setTotalClientes(count);
-        setInativosCount(Math.floor(count * 0.7) || 1);
+      setIsLoading(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // 1. Buscar Barbearia e Configurações
+        const { data: barbData } = await supabase
+          .from('barbearias')
+          .select('*')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+
+        if (barbData) {
+          setBarbeariaId(barbData.id);
+          setSettings({
+            fidelidade_ativa: barbData.fidelidade_ativa ?? true,
+            fidelidade_cortes: barbData.fidelidade_cortes ?? 10,
+            fidelidade_premio_servico_id: barbData.fidelidade_premio_servico_id || '',
+            cashback_ativa: barbData.cashback_ativo ?? true,
+            cashback_percentual: barbData.cashback_percentual ?? 5
+          });
+        }
+
+        // 2. Buscar Serviços (Para o Dropdown de Fidelidade)
+        const { data: servData } = await supabase
+          .from('servicos')
+          .select('id, nome')
+          .order('nome');
+        if (servData) setServicos(servData);
+
+        // 3. Métricas Básicas
+        const { count } = await supabase.from('clientes').select('*', { count: 'exact', head: true });
+        if (count) {
+          setTotalClientes(count);
+          setInativosCount(Math.floor(count * 0.7) || 1);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados de marketing:", error);
+      } finally {
+        setIsLoading(false);
       }
     }
     fetchDados();
   }, []);
+
+  const handleSaveSettings = async (newSettings?: any) => {
+    const toSave = newSettings || settings;
+    if (!barbeariaId) return;
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('barbearias')
+        .update({
+          fidelidade_ativa: toSave.fidelidade_ativa,
+          fidelidade_cortes: Number(toSave.fidelidade_cortes),
+          fidelidade_premio_servico_id: toSave.fidelidade_premio_servico_id || null,
+          cashback_ativo: toSave.cashback_ativa,
+          cashback_percentual: Number(toSave.cashback_percentual)
+        })
+        .eq('id', barbeariaId);
+
+      if (error) throw error;
+      
+      if (!newSettings) setIsEditingRule(false);
+      alert("Configurações atualizadas com sucesso!");
+    } catch (error: any) {
+      alert("Erro ao salvar: " + error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const toggleStatus = (type: 'fidelidade' | 'cashback') => {
+    const field = type === 'fidelidade' ? 'fidelidade_ativa' : 'cashback_ativa';
+    const newVal = !settings[field];
+    const newSettings = { ...settings, [field]: newVal };
+    setSettings(newSettings);
+    handleSaveSettings(newSettings);
+  };
 
   const handleDisparo = async () => {
     let target = filtroAlvo === 'inativos' ? inativosCount : (filtroAlvo === 'todos' ? totalClientes : ranking.length);
@@ -53,10 +135,9 @@ export default function MarketingPage() {
     alert(`🚀 Disparo de Marketing em Massa enviado para ${target} clientes com sucesso! (Demonstração)`);
     setIsSending(false);
   };
-  
-  const handleSaveRule = () => {
-    setIsEditingRule(false);
-    alert("Regra de fidelidade atualizada com sucesso!");
+
+  const getServiceName = (id: string) => {
+    return servicos.find(s => s.id === id)?.nome || "Corte Grátis";
   };
 
   return (
@@ -101,9 +182,30 @@ export default function MarketingPage() {
 
         {/* Área de Conteúdo */}
         <div className="main-panel">
-          {activeTab === 'fidelidade' && (
+          {isLoading ? (
+            <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Carregando ferramentas de marketing...</div>
+          ) : activeTab === 'fidelidade' ? (
             <div>
-              <h2 style={{ marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>Visão Geral de Fidelidade</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
+                <h2>Programa de Fidelidade</h2>
+                <button 
+                  onClick={() => toggleStatus('fidelidade')}
+                  style={{ 
+                    padding: '0.5rem 1rem', 
+                    borderRadius: '20px', 
+                    border: 'none', 
+                    background: settings.fidelidade_ativa ? '#10b981' : 'var(--bg-primary)',
+                    color: settings.fidelidade_ativa ? 'white' : 'var(--text-secondary)',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  {settings.fidelidade_ativa ? '● Ativo' : '○ Inativo'}
+                </button>
+              </div>
               
               <div className="metrics-grid" style={{ marginBottom: '2rem' }}>
                 <div className="metric-card" style={{ background: 'var(--bg-secondary)', borderLeft: '4px solid var(--accent-primary)' }}>
@@ -120,28 +222,37 @@ export default function MarketingPage() {
                 </div>
               </div>
 
-              <div className="section-card" style={{ background: 'var(--bg-secondary)', marginBottom: '1.5rem' }}>
+              <div className="section-card" style={{ background: 'var(--bg-secondary)', marginBottom: '1.5rem', opacity: settings.fidelidade_ativa ? 1 : 0.6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <h3 style={{ fontSize: '1.1rem' }}>Regra Atual do Cartão</h3>
+                  <h3 style={{ fontSize: '1.1rem' }}>Regra de Recompensa</h3>
                   {!isEditingRule ? (
-                    <button className="btn-text" onClick={() => setIsEditingRule(true)} style={{ fontSize: '0.85rem', color: 'var(--text-primary)', background: 'var(--bg-primary)', padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>✏️ Editar</button>
+                    <button className="btn-text" onClick={() => setIsEditingRule(true)} style={{ fontSize: '0.85rem', color: 'var(--text-primary)', background: 'var(--bg-primary)', padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid var(--border-color)', cursor: settings.fidelidade_ativa ? 'pointer' : 'not-allowed' }} disabled={!settings.fidelidade_ativa}>✏️ Editar</button>
                   ) : (
-                    <button className="btn-text" onClick={handleSaveRule} style={{ fontSize: '0.85rem', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid #10b981' }}>✅ Salvar</button>
+                    <button className="btn-text" onClick={() => handleSaveSettings()} style={{ fontSize: '0.85rem', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid #10b981' }} disabled={isSaving}>{isSaving ? 'Salvando...' : '✅ Salvar'}</button>
                   )}
                 </div>
                 
                 {isEditingRule ? (
-                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--bg-primary)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--accent-primary)' }}>
-                      <input type="number" min="1" max="20" value={ruleCortes} onChange={(e) => setRuleCortes(Number(e.target.value))} style={{ width: '60px', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white', textAlign: 'center' }} />
-                      <span style={{ fontWeight: 'bold' }}>Cortes = </span>
-                      <input type="text" value={rulePremio} onChange={(e) => setRulePremio(e.target.value)} style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white' }} />
+                   <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '1rem', alignItems: 'center', background: 'var(--bg-primary)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--accent-primary)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <input type="number" min="1" max="50" value={settings.fidelidade_cortes} onChange={(e) => setSettings({...settings, fidelidade_cortes: Number(e.target.value)})} style={{ width: '70px', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white', textAlign: 'center', fontWeight: 'bold' }} />
+                        <span style={{ fontWeight: '500' }}>Cortes Acumulados = </span>
+                      </div>
+                      <select 
+                        value={settings.fidelidade_premio_servico_id} 
+                        onChange={(e) => setSettings({...settings, fidelidade_premio_servico_id: e.target.value})}
+                        style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white', cursor: 'pointer' }}
+                      >
+                        <option value="">Selecione o Bônus...</option>
+                        {servicos.map(s => <option key={s.id} value={s.id}>Grátis: {s.nome}</option>)}
+                      </select>
                    </div>
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--bg-primary)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                      <div style={{ fontSize: '2rem' }}>✂️</div>
                      <div>
-                       <strong style={{ display: 'block', fontSize: '1.1rem' }}>{ruleCortes} Cortes = 1 {rulePremio}</strong>
-                       <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Os pontos são creditados automaticamente após o cliente concluir o pagamento via PIX ou Link.</span>
+                       <strong style={{ display: 'block', fontSize: '1.1rem' }}>{settings.fidelidade_cortes} Cortes = 1 {getServiceName(settings.fidelidade_premio_servico_id)} Grátis</strong>
+                       <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>O selo é creditado automaticamente após o pagamento do agendamento ser confirmado.</span>
                      </div>
                   </div>
                 )}
@@ -168,7 +279,7 @@ export default function MarketingPage() {
                             {i === 0 ? '🥇 1º' : i === 1 ? '🥈 2º' : '🥉 3º'}
                          </td>
                          <td style={{ padding: '1rem 1.5rem', fontWeight: 'bold' }}>{r.nome} <span style={{display: 'block', fontSize: '0.75rem', fontWeight: 'normal', color: 'var(--text-secondary)'}}>{r.telefone}</span></td>
-                         <td style={{ padding: '1rem 1.5rem' }}>{r.cortes} / {ruleCortes}</td>
+                         <td style={{ padding: '1rem 1.5rem' }}>{r.cortes} / {settings.fidelidade_cortes}</td>
                          <td style={{ padding: '1rem 1.5rem', color: 'var(--accent-primary)' }}>{r.proxPremio}</td>
                          <td style={{ padding: '1rem 1.5rem' }}>
                            <button className="btn-primary" style={{ width: 'auto', padding: '0.4rem 0.8rem', fontSize: '0.8rem', background: '#25D366' }}>WhatsApp</button>
@@ -179,15 +290,27 @@ export default function MarketingPage() {
                 </table>
               </div>
             </div>
-          )}
-
-          {activeTab === 'cashback' && (
+          ) : activeTab === 'cashback' ? (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
-                <h2>Carteira de Cashback Automático</h2>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(16, 185, 129, 0.1)', padding: '0.4rem 1rem', borderRadius: '16px', border: '1px solid #10b981', color: '#10b981', fontWeight: 'bold' }}>
-                   Status: Ativo (Devolvendo 5%)
-                </div>
+                <h2>Carteira de Cashback</h2>
+                <button 
+                  onClick={() => toggleStatus('cashback')}
+                  style={{ 
+                    padding: '0.5rem 1rem', 
+                    borderRadius: '20px', 
+                    border: 'none', 
+                    background: settings.cashback_ativa ? '#2563eb' : 'var(--bg-primary)',
+                    color: settings.cashback_ativa ? 'white' : 'var(--text-secondary)',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  {settings.cashback_ativa ? `● Ativo (${settings.cashback_percentual}%)` : '○ Inativo'}
+                </button>
               </div>
               
               <div className="metrics-grid" style={{ marginBottom: '2rem' }}>
@@ -204,6 +327,31 @@ export default function MarketingPage() {
                    <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--accent-primary)' }}>34%</div>
                 </div>
               </div>
+
+              {settings.cashback_ativa && (
+                <div className="section-card" style={{ background: 'var(--bg-secondary)', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ fontSize: '1.5rem' }}>🎯</div>
+                    <div>
+                      <strong>Configuração de Cashback</strong>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Quanto o cliente recebe de volta do valor gasto?</p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input 
+                      type="number" 
+                      value={settings.cashback_percentual} 
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setSettings({...settings, cashback_percentual: val});
+                      }}
+                      onBlur={() => handleSaveSettings()}
+                      style={{ width: '80px', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white', textAlign: 'center', fontWeight: 'bold' }} 
+                    />
+                    <span style={{ fontWeight: 'bold' }}>%</span>
+                  </div>
+                </div>
+              )}
 
               <div className="section-card" style={{ background: 'var(--bg-secondary)', padding: 0, overflow: 'hidden' }}>
                 <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -227,9 +375,9 @@ export default function MarketingPage() {
                          <td style={{ padding: '1rem 1.5rem', color: '#10b981', fontWeight: 'bold' }}>+ R$ {c.valorAplicado.toFixed(2).replace('.',',')}</td>
                          <td style={{ padding: '1rem 1.5rem' }}>
                             {c.status === 'Resgatado' ? (
-                              <span style={{ padding: '0.2rem 0.6rem', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', fontSize: '0.8rem' }}>Resgatado</span>
+                               <span style={{ padding: '0.2rem 0.6rem', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', fontSize: '0.8rem' }}>Resgatado</span>
                             ) : (
-                              <span style={{ padding: '0.2rem 0.6rem', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', borderRadius: '4px', fontSize: '0.8rem' }}>Pendente</span>
+                               <span style={{ padding: '0.2rem 0.6rem', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', borderRadius: '4px', fontSize: '0.8rem' }}>Pendente</span>
                             )}
                          </td>
                       </tr>
@@ -238,9 +386,7 @@ export default function MarketingPage() {
                 </table>
               </div>
             </div>
-          )}
-
-          {activeTab === 'promocoes' && (
+          ) : (
             <div>
               <h2 style={{ marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>Disparo em Massa & CRM</h2>
               
