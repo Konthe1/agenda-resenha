@@ -29,18 +29,29 @@ export default function ProdutosPage() {
     async function loadInitialData() {
       setIsLoading(true);
       try {
-        // 1. Buscar a barbearia do usuário logado (Dono)
+        // 1. Buscar o usuário logado
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const { data: barbearia } = await supabase
+          // 2. Buscar a barbearia deste usuário (SaaS Mode)
+          let { data: barbearia, error } = await supabase
             .from('barbearias')
             .select('id')
             .eq('owner_id', user.id)
-            .single();
+            .maybeSingle();
           
+          // Fallback: Se não encontrou pelo owner_id, tenta pegar a primeira barbearia do sistema (Demo Mode/Fix)
+          if (!barbearia) {
+            const { data: firstBarb } = await supabase
+              .from('barbearias')
+              .select('id')
+              .limit(1)
+              .maybeSingle();
+            barbearia = firstBarb;
+          }
+
           if (barbearia) {
             setBarbeariaId(barbearia.id);
-            // 2. Buscar produtos desta barbearia
+            // 3. Buscar produtos
             const { data: prods } = await supabase
               .from('produtos')
               .select('*')
@@ -48,10 +59,12 @@ export default function ProdutosPage() {
               .order('nome');
             
             if (prods) setProdutos(prods);
+          } else {
+            console.warn("Nenhuma barbearia encontrada para o usuário ou no sistema.");
           }
         }
       } catch (err) {
-        console.error("Erro ao carregar produtos:", err);
+        console.error("Erro ao carregar dados iniciais:", err);
       } finally {
         setIsLoading(false);
       }
@@ -61,11 +74,16 @@ export default function ProdutosPage() {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !barbeariaId) return;
+    if (!file) return;
+
+    if (!barbeariaId) {
+      alert("Aguarde o carregamento do sistema ou verifique seu perfil nas Configurações.");
+      return;
+    }
 
     setIsUploading(true);
     const fileExt = file.name.split('.').pop();
-    const fileName = `${barbeariaId}/${Math.random()}.${fileExt}`;
+    const fileName = `${barbeariaId}/${Date.now()}.${fileExt}`;
     const filePath = `${fileName}`;
 
     try {
@@ -88,8 +106,13 @@ export default function ProdutosPage() {
   };
 
   const handleSave = async () => {
-     if (!formData.nome || !formData.preco || !barbeariaId) {
-       alert("Preencha nome e preço!");
+     if (!formData.nome || !formData.preco) {
+       alert("Por favor, preencha o Nome e o Preço do produto.");
+       return;
+     }
+
+     if (!barbeariaId) {
+       alert("Erro: Não foi possível identificar sua barbearia. Por favor, configure seu perfil em 'Configurações' primeiro.");
        return;
      }
 
