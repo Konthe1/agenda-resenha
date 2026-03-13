@@ -80,15 +80,42 @@ export default function Home() {
           </p>
         </section>
 
-        {/* Social Proof */}
-        <section className="social-proof animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <p>Potencializando a gestão de barbearias em todo o Brasil</p>
-          <div className="logo-cloud">
-            <div className="logo-placeholder"><span>✂️</span> The Classic Barber</div>
-            <div className="logo-placeholder"><span>💈</span> Navalha Premium</div>
-            <div className="logo-placeholder"><span>🧔</span> Brotherhood Shop</div>
-            <div className="logo-placeholder"><span>🔪</span> Sharp Fades</div>
-            <div className="logo-placeholder"><span>🔥</span> Street Barbers</div>
+        {/* Demonstration Gallery (New) */}
+        <section id="demonstracao" className="section-header animate-fade-in" style={{ padding: '4rem 2rem' }}>
+          <div className="badge">📱 Por Dentro da Plataforma</div>
+          <h2>Tudo o que você precisa no seu celular</h2>
+          <p>Gestão completa, rápida e intuitiva. Sem complicação.</p>
+          
+          <div className="gallery-grid" style={{ marginTop: '3rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
+             <div className="gallery-item" style={{ background: 'var(--bg-secondary)', borderRadius: '16px', border: '1px solid var(--border-color)', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                   <span style={{ fontSize: '1.2rem' }}>📊</span>
+                   <strong style={{ fontSize: '0.9rem' }}>Dashboard Inteligente</strong>
+                </div>
+                <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', overflow: 'hidden' }}>
+                   <img src="/dashboard_preview.png" alt="Dashboard Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+             </div>
+             
+             <div className="gallery-item" style={{ background: 'var(--bg-secondary)', borderRadius: '16px', border: '1px solid var(--border-color)', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                   <span style={{ fontSize: '1.2rem' }}>📅</span>
+                   <strong style={{ fontSize: '0.9rem' }}>Agenda em Tempo Real</strong>
+                </div>
+                <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', overflow: 'hidden' }}>
+                   <img src="/agenda_preview.png" alt="Agenda Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+             </div>
+
+             <div className="gallery-item" style={{ background: 'var(--bg-secondary)', borderRadius: '16px', border: '1px solid var(--border-color)', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                   <span style={{ fontSize: '1.2rem' }}>💬</span>
+                   <strong style={{ fontSize: '0.9rem' }}>Notificação WhatsApp</strong>
+                </div>
+                <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', overflow: 'hidden' }}>
+                   <img src="/whatsapp_preview.png" alt="WhatsApp Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+             </div>
           </div>
         </section>
 
@@ -196,7 +223,7 @@ export default function Home() {
               <p className="testimonial-text">Antes nós perdemos pelo menos 3 a 4 horários no sábado porque o pessoal esquecia. Desde que ligamos o disparo de WhatsApp do Resenha, nossa taxa de comparecimento foi para 98%.</p>
               <div className="testimonial-author">
                 <div className="author-avatar">
-                   <img src="/marcos_navalha_headshot_1773373064245.png" alt="Marcos Navalha" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                   <img src="/marcos_navalha_headshot_1773373064245.png" alt="Marcos Ribeiro" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                 </div>
                 <div className="author-info">
                   <h4>Marcos Ribeiro</h4>

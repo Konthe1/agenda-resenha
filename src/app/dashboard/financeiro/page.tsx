@@ -28,7 +28,7 @@ export default function FinanceiroPage() {
 
       if (barbData) {
         setBarbeariaId(barbData.id);
-        setPlano(barbData.plano || 'FREE');
+        setPlano((barbData.plano || 'FREE').toUpperCase());
       }
 
       const activeBarbeariaId = barbData?.id || '1';
@@ -142,13 +142,13 @@ export default function FinanceiroPage() {
         <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>📈</div>
         <h2 style={{ fontSize: '1.8rem', color: '#f59e0b', marginBottom: '1rem' }}>Gestão Financeira PRO</h2>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: '1.6' }}>
-          Tenha o controle total do seu negócio com **Gráficos Avançados, Fluxo de Caixa Real e Relatórios de Comissionamento**. Exclusivo para membros PRO!
+          Tenha o controle total do seu negócio com **Gráficos Avançados, Fluxo de Caixa Real e Previsões de Faturamento**. Exclusivo para membros PRO!
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', textAlign: 'left', marginBottom: '2rem', fontSize: '0.9rem' }}>
           <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Faturamento Realtime</div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Ticket Médio</div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Relatórios Exportáveis</div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Comissões Automáticas</div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>✅ Lembretes Automáticos</div>
         </div>
         <button 
            className="btn-primary" 

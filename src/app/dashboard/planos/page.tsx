@@ -25,7 +25,7 @@ export default function PlanosPage() {
 
       if (barbData) {
         setBarbeariaId(barbData.id);
-        setPlano(barbData.plano || 'FREE');
+        setPlano((barbData.plano || 'FREE').toUpperCase());
       }
 
       const activeBarbeariaId = barbData?.id || '1';

@@ -55,9 +55,9 @@ export default function DashboardLayout({
         setBarbeariaPerfil({
           nome: data.nome || 'Resenha Barber',
           logo_url: data.logo_url || '',
-          plano: data.plano || 'FREE',
-          endereco: data.endereco || 'Endereço não cadastrado',
-          whatsapp: data.whatsapp || 'Não conectado'
+          plano: (data.plano || 'FREE').toUpperCase(),
+          endereco: data.endereco || '',
+          whatsapp: data.whatsapp || ''
         });
       }
     }
@@ -382,7 +382,7 @@ export default function DashboardLayout({
                 <div style={{ fontSize: '1.5rem', opacity: 0.7 }}>💬</div>
                 <div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>WhatsApp Conectado</div>
-                  <div style={{ fontSize: '0.95rem' }}>{barbeariaPerfil.whatsapp || 'Nenhum número conectado'}</div>
+                  <div style={{ fontSize: '0.95rem' }}>{barbeariaPerfil.whatsapp || 'Não informado'}</div>
                 </div>
               </div>
 
