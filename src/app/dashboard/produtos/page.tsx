@@ -161,8 +161,7 @@ export default function ProdutosPage() {
         estoque: Number(formData.estoque) || 0,
         estoque_minimo: Number(formData.estoque_minimo) || 5,
         categoria: formData.categoria,
-        imagem_url: formData.imagem_url,
-        codigo_barras: formData.codigo_barras
+        imagem_url: formData.imagem_url
      };
 
      try {
@@ -197,7 +196,7 @@ export default function ProdutosPage() {
     setEditingProduct(null);
     setFormData({
       nome: '', preco: '', preco_custo: '', estoque: '', 
-      estoque_minimo: '5', categoria: 'Geral', imagem_url: '', codigo_barras: ''
+      estoque_minimo: '5', categoria: 'Geral', imagem_url: ''
     });
   };
 
@@ -210,8 +209,7 @@ export default function ProdutosPage() {
       estoque: produto.estoque.toString(),
       estoque_minimo: (produto.estoque_minimo || 5).toString(),
       categoria: produto.categoria || 'Geral',
-      imagem_url: produto.imagem_url || '',
-      codigo_barras: produto.codigo_barras || ''
+      imagem_url: produto.imagem_url || ''
     });
     setIsModalOpen(true);
   };
