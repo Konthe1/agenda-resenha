@@ -43,8 +43,8 @@ export default function MasterDashboardPage() {
              id: b.id,
              nome: b.nome || 'Barbearia Sem Nome',
              dono: 'Sistema',
-             plano: b.plano_ativo || (new Date(b.criado_em) >= fourteenDaysAgo ? 'Trial 14 Dias' : 'Expirado'),
-             valorMensal: b.plano_ativo === 'PRO' ? 149.90 : 0,
+             plano: b.plano || (new Date(b.criado_em) >= fourteenDaysAgo ? 'Trial 14 Dias' : 'Expirado'),
+             valorMensal: b.plano === 'PRO' ? 149.90 : 0,
              barbeirosTotais: teamSize,
              barbeirosExtras: Math.max(0, teamSize - 5), // Assumindo base 5 default
              statusPagamento: b.status_pagamento || 'Pendente',
@@ -68,7 +68,7 @@ export default function MasterDashboardPage() {
     const newPlan = newStatus === 'Suspenso' ? 'Expirado' : 'PRO';
     
     // In a real app we would call Supabase
-    const { error } = await supabase.from('barbearias').update({ status_pagamento: newStatus, plano_ativo: newPlan }).eq('id', barbeariaId);
+    const { error } = await supabase.from('barbearias').update({ status_pagamento: newStatus, plano: newPlan }).eq('id', barbeariaId);
     if (!error) {
       setClientes(clientes.map(c => c.id === barbeariaId ? { ...c, statusPagamento: newStatus, plano: newPlan } : c));
       alert(`Status atualizado para ${newStatus} com sucesso!`);

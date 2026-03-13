@@ -20,11 +20,22 @@ export default function FinanceiroPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: barbData } = await supabase
+      // Primeiro tentamos buscar a barbearia vinculada ao owner_id do usuário logado
+      let { data: barbData, error } = await supabase
         .from('barbearias')
         .select('id, plano')
         .eq('owner_id', user.id)
         .maybeSingle();
+
+      // Se não encontrar para o owner_id, tentamos pegar qualquer barbearia como fallback (para demos)
+      if (!barbData && !error) {
+        const { data: fallbackData } = await supabase
+          .from('barbearias')
+          .select('id, plano')
+          .limit(1)
+          .maybeSingle();
+        barbData = fallbackData;
+      }
 
       if (barbData) {
         setBarbeariaId(barbData.id);

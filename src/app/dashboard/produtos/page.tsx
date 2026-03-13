@@ -40,23 +40,23 @@ export default function ProdutosPage() {
         if (user) {
           console.log("Usuário identificado:", user.id);
           // 2. Buscar a barbearia deste usuário
-          const { data: barbOwner } = await supabase
+          let { data: barbOwner, error: errOwner } = await supabase
             .from('barbearias')
             .select('id, plano')
             .eq('owner_id', user.id)
             .maybeSingle();
           barbearia = barbOwner;
-        }
 
-        // 3. Fallback 1: Se não encontrou pelo owner_id (ou não logado), tenta pegar a PRIMEIRA barbearia do banco
-        if (!barbearia) {
-          console.log("Buscando qualquer barbearia como fallback...");
-          const { data: firstBarb } = await supabase
-            .from('barbearias')
-            .select('id, plano')
-            .limit(1)
-            .maybeSingle();
-          barbearia = firstBarb;
+          // Fallback: se não achar pelo owner, tenta a primeira disponível (para demos/novos users)
+          if (!barbearia && !errOwner) {
+            console.log("Buscando qualquer barbearia como fallback...");
+            const { data: firstBarb } = await supabase
+              .from('barbearias')
+              .select('id, plano')
+              .limit(1)
+              .maybeSingle();
+            barbearia = firstBarb;
+          }
         }
 
         // 4. Fallback 2: Se ATE AGORA for null, a tabela barbearias está VAZIA. 

@@ -67,8 +67,8 @@ export default function DashboardLayout({
           nome: data.nome || 'Resenha Barber',
           logo_url: data.logo_url || '',
           plano: (data.plano || 'FREE').toUpperCase(),
-          endereco: data.endereco,
-          whatsapp: data.whatsapp
+          endereco: data.endereco || 'Rua das Barbearias, 123 - Centro',
+          whatsapp: data.whatsapp || '5511999999999'
         });
       }
     }

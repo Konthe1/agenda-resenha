@@ -54,22 +54,22 @@ export default function MarketingPage() {
 
         if (user) {
           // 1. Tentar buscar pelo owner_id
-          const { data: barbOwner } = await supabase
+          const { data: barbOwner, error: errOwner } = await supabase
             .from('barbearias')
             .select('*')
             .eq('owner_id', user.id)
             .maybeSingle();
           barbearia = barbOwner;
-        }
 
-        // Fallback 1: Buscar qualquer barbearia
-        if (!barbearia) {
-          const { data: firstBarb } = await supabase
-            .from('barbearias')
-            .select('*')
-            .limit(1)
-            .maybeSingle();
-          barbearia = firstBarb;
+          // Se não encontrar para o owner_id, tentamos pegar qualquer barbearia como fallback (para demos)
+          if (!barbearia && !errOwner) {
+            const { data: firstBarb } = await supabase
+              .from('barbearias')
+              .select('*')
+              .limit(1)
+              .maybeSingle();
+            barbearia = firstBarb;
+          }
         }
 
         if (barbearia) {
