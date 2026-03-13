@@ -72,7 +72,7 @@ export default function DashboardLayout({
           id: data.id,
           nome: data.nome || 'Resenha Barber',
           logo_url: data.logo_url || '',
-          plano: (user.email === 'vampiro.cd7@gmail.com' ? 'PRO' : (data.plano || 'FREE').toUpperCase()),
+          plano: (data.plano || 'FREE').toUpperCase(),
           endereco: data.endereco || '',
           whatsapp: data.whatsapp || ''
         });
@@ -82,7 +82,7 @@ export default function DashboardLayout({
           id: 'new',
           nome: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Resenha Barber',
           logo_url: '',
-          plano: (user.email === 'vampiro.cd7@gmail.com') ? 'PRO' : 'FREE',
+          plano: 'FREE',
           endereco: '',
           whatsapp: ''
         });
