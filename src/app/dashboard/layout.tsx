@@ -45,18 +45,21 @@ export default function DashboardLayout({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Primeiro tentamos buscar a barbearia vinculada ao owner_id do usuário logado
+      // 1. Tentar buscar pelo owner_id (Priorizando PRO se houver duplicatas por erro)
       let { data, error } = await supabase
         .from('barbearias')
         .select('nome, logo_url, plano, endereco, whatsapp')
         .eq('owner_id', user.id)
+        .order('plano', { ascending: false }) // Prioriza 'PRO' sobre 'FREE'
+        .limit(1)
         .maybeSingle();
 
-      // Se não encontrar para o owner_id, tentamos pegar qualquer barbearia como fallback (para demos)
-      if (!data && !error) {
+      // 2. Fallback: buscar qualquer barbearia (para demos ou novos usuários ainda não vinculados)
+      if (!data) {
         const { data: fallbackData } = await supabase
           .from('barbearias')
           .select('nome, logo_url, plano, endereco, whatsapp')
+          .order('plano', { ascending: false })
           .limit(1)
           .maybeSingle();
         data = fallbackData;
