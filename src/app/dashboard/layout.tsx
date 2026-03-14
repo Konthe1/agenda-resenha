@@ -44,7 +44,9 @@ export default function DashboardLayout({
 
   async function fetchBarbearia() {
     try {
+      console.log("Layout: DEBUG - Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 15) + "...");
       let { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log("Layout: DEBUG - Auth User:", user?.email, "Error:", authError?.message);
       
       if (!user) {
         const { data: sessionData } = await supabase.auth.getSession();
