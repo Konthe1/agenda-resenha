@@ -191,24 +191,122 @@ export default function ConfiguracoesPage() {
       }
    };
 
-   async function loadData() {
-      setIsLoading(true);
-      try {
-        console.log("Config: Iniciando loadData...");
-        let { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          const { data: sess } = await supabase.auth.getSession();
-          user = sess.session?.user || null;
-        }
-        if (!user) {
-          setIsLoading(false);
-          return;
-        }
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          setIsLoading(false);
-          return;
-        }
+   // ==========================================
+   // MÓDULO DE ÁUDIO (RESTAURADO)
+   // ==========================================
+   const startRecording = async () => {
+     try {
+       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+       const recorder = new MediaRecorder(stream);
+       const chunks: Blob[] = [];
+
+       recorder.ondataavailable = (e) => {
+         if (e.data.size > 0) chunks.push(e.data);
+       };
+
+       recorder.onstop = async () => {
+         const blob = new Blob(chunks, { type: 'audio/webm' });
+         setAudioChunks([]); 
+         await saveAudio(blob);
+       };
+
+       setMediaRecorder(recorder);
+       setAudioChunks([]);
+       recorder.start();
+       setIsRecording(true);
+     } catch (e: any) {
+       alert("Permissão de microfone negada ou erro: " + e.message);
+     }
+   };
+
+   const stopRecording = () => {
+     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+       mediaRecorder.stop();
+       setIsRecording(false);
+     }
+   };
+
+   const saveAudio = async (blob: Blob) => {
+     setIsSubmitting(true);
+     try {
+       if (!newAudioData.barbeiro_id) {
+         alert("Por favor, selecione um profissional antes de gravar.");
+         return;
+       }
+
+       const fileName = `${Date.now()}.webm`;
+       const filePath = `audios/${fileName}`;
+
+       // Converter Blob para File para compatibilidade com Supabase Upload
+       const audioFile = new File([blob], fileName, { type: 'audio/webm' });
+
+       const { error: uploadError } = await supabase.storage
+         .from('barbearia-assets')
+         .upload(filePath, audioFile);
+
+       if (uploadError) throw uploadError;
+
+       const { data: { publicUrl } } = supabase.storage
+         .from('barbearia-assets')
+         .getPublicUrl(filePath);
+
+       const { error: dbError } = await supabase
+         .from('audios_personalizados')
+         .insert({
+           barbearia_id: barbeariaPerfil.id,
+           barbeiro_id: newAudioData.barbeiro_id,
+           gatilho: newAudioData.gatilho,
+           cliente_id: newAudioData.cliente_id || null,
+           audio_url: publicUrl
+         });
+
+       if (dbError) throw dbError;
+
+       // Recarregar lista
+       const { data } = await supabase
+         .from('audios_personalizados')
+         .select('*, barbeiros(nome), clientes(nome)')
+         .eq('barbearia_id', barbeariaPerfil.id)
+         .order('criado_em', { ascending: false });
+       
+       if (data) setPersonalizedAudios(data);
+       alert("Áudio salvo com sucesso!");
+     } catch (e: any) {
+       console.error("Erro ao salvar áudio:", e);
+       alert("Erro ao salvar áudio: " + e.message);
+     } finally {
+       setIsSubmitting(false);
+     }
+   };
+
+   const handleDeleteAudio = async (id: string) => {
+     if (!confirm("Deseja excluir este áudio?")) return;
+     try {
+       const { error } = await supabase
+         .from('audios_personalizados')
+         .delete()
+         .eq('id', id);
+       if (error) throw error;
+       setPersonalizedAudios(prev => prev.filter(a => a.id !== id));
+     } catch (e: any) {
+       alert("Erro ao excluir: " + e.message);
+     }
+   };
+
+   useEffect(() => {
+     async function loadData() {
+       setIsLoading(true);
+       try {
+         console.log("Config: Iniciando loadData...");
+         let { data: { user } } = await supabase.auth.getUser();
+         if (!user) {
+           const { data: sess } = await supabase.auth.getSession();
+           user = sess.session?.user || null;
+         }
+         if (!user) {
+           setIsLoading(false);
+           return;
+         }
 
         // 1. Tentar buscar pelo owner_id
         let { data: barbData } = await supabase
