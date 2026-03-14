@@ -370,11 +370,11 @@ export default function BookingPage() {
         {step !== 5 && (
           <div className="barbershop-header">
             {barbearia.logo_url ? (
-              <img src={barbearia.logo_url} alt={barbearia.nome} className="barbershop-logo" style={{ objectFit: 'cover' }} />
+              <img src={barbearia.logo_url} alt={barbearia.nome} className="barbershop-logo" style={{ objectFit: 'cover', width: '90px', height: '90px', marginBottom: '1rem' }} />
             ) : (
-              <div className="barbershop-logo">✂️</div>
+              <div className="barbershop-logo" style={{ width: '90px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', marginBottom: '1rem' }}>✂️</div>
             )}
-            <h1>{barbearia.nome || 'Minha Barbearia'}</h1>
+            <h1 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '0.4rem', color: 'white' }}>{barbearia.nome || 'Minha Barbearia'}</h1>
             {barbearia.endereco && (
               <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.85rem', marginTop: '0.25rem', opacity: 0.9 }}>
                 📍 {barbearia.endereco}

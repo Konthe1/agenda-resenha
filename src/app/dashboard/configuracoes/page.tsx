@@ -464,10 +464,17 @@ export default function ConfiguracoesPage() {
             <div>
               <h2 style={{ marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>Dados Públicos</h2>
               
-              <div style={{ display: 'grid', gap: '1.5rem' }}>
+              <div style={{ display: 'grid', gap: '2rem', background: 'var(--bg-secondary)', padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Nome da Barbearia</label>
-                  <input type="text" value={barbeariaPerfil.nome} onChange={(e) => setBarbeariaPerfil({...barbeariaPerfil, nome: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'white' }} />
+                  <label style={{ display: 'block', marginBottom: '0.8rem', fontSize: '1rem', fontWeight: 'bold', color: 'var(--accent-primary)' }}>🏷️ Nome da Barbearia (Aparece no Agendamento)</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ex: Mundo Resenha Barber"
+                    value={barbeariaPerfil.nome} 
+                    onChange={(e) => setBarbeariaPerfil({...barbeariaPerfil, nome: e.target.value})} 
+                    style={{ width: '100%', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'white', fontSize: '1.1rem' }} 
+                  />
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Este nome será o título principal da sua página de agendamento para os clientes.</p>
                 </div>
                 
                 <div>

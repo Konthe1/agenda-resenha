@@ -42,90 +42,85 @@ export default function DashboardLayout({
   });
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-  useEffect(() => {
-    async function fetchBarbearia() {
-      try {
-        console.log("Layout: Iniciando fetchBarbearia...");
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        if (authError || !user) {
-          console.log("Layout: Erro ou usuário não encontrado no Auth:", authError);
-          setBarbeariaPerfil(prev => ({ ...prev, nome: 'Visitante' }));
-          return;
-        }
+  async function fetchBarbearia() {
+    try {
+      console.log("Layout: Iniciando fetchBarbearia...");
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.log("Layout: Erro ou usuário não encontrado no Auth:", authError);
+        setBarbeariaPerfil(prev => ({ ...prev, nome: 'Visitante' }));
+        return;
+      }
 
-        console.log("Layout: Usuário logado:", user?.email);
+      console.log("Layout: Usuário logado:", user?.email);
 
-        // 1. Tentar buscar pelo owner_id
-        let { data, error: dbError } = await supabase
+      // 1. Tentar buscar pelo owner_id
+      let { data, error: dbError } = await supabase
+        .from('barbearias')
+        .select('id, nome, logo_url, plano, endereco, whatsapp')
+        .eq('owner_id', user.id)
+        .order('plano', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (dbError) console.error("Layout: Erro ao buscar barbearia por owner_id:", dbError);
+
+      // 2. Fallback: buscar qualquer barbearia (Se RLS permitir)
+      if (!data) {
+        console.log("Layout: Barbearia por owner não encontrada, tentando fallback...");
+        const { data: fallbackData } = await supabase
           .from('barbearias')
           .select('id, nome, logo_url, plano, endereco, whatsapp')
-          .eq('owner_id', user.id)
           .order('plano', { ascending: false })
           .limit(1)
           .maybeSingle();
+        data = fallbackData;
+      }
 
-        if (dbError) console.error("Layout: Erro ao buscar barbearia por owner_id:", dbError);
-
-        // 2. Fallback: buscar qualquer barbearia (Se RLS permitir)
-        if (!data) {
-          console.log("Layout: Barbearia por owner não encontrada, tentando fallback...");
-          const { data: fallbackData } = await supabase
-            .from('barbearias')
-            .select('id, nome, logo_url, plano, endereco, whatsapp')
-            .order('plano', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          data = fallbackData;
-        }
-
-        if (data) {
-          console.log("Layout: Dados da barbearia carregados:", data.nome);
-          setBarbeariaPerfil({
-            id: data.id,
-            nome: data.nome || 'Resenha Barber',
-            logo_url: data.logo_url || '',
-            plano: (data.plano || 'FREE').toUpperCase(),
-            endereco: data.endereco || '',
-            whatsapp: data.whatsapp || ''
-          });
-        } else {
-          console.log("Layout: Nenhuma barbearia encontrada no DB ou RLS bloqueando.");
-          setBarbeariaPerfil({
-            id: '',
-            nome: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Minha Barbearia',
-            logo_url: '',
-            plano: 'FREE',
-            endereco: '',
-            whatsapp: ''
-          });
-        }
-
-        // 4. Sincronização WhatsApp (Silenciosa)
-        try {
-          fetch('/api/whatsapp/status').then(res => res.json()).then(stData => {
-            if (stData.connected && stData.number) {
-              setBarbeariaPerfil(prev => ({ ...prev, whatsapp: stData.number }));
-            } else {
-              fetch('/api/whatsapp/connect', { method: 'POST' }).catch(() => {});
-            }
-          }).catch(() => {});
-        } catch (e) {
-          // Ignora erro de sync no layout principal
-        }
-      } catch (error) {
-        console.error("Layout: Erro crítico em fetchBarbearia:", error);
-        setBarbeariaPerfil(prev => ({ ...prev, nome: 'Erro ao Carregar' }));
-      } finally {
-        // Garantia final de que o nome não ficará como "Carregando..."
-        setBarbeariaPerfil(prev => {
-          if (prev.nome === 'Carregando...') {
-            return { ...prev, nome: 'Barbearia' };
-          }
-          return prev;
+      if (data) {
+        console.log("Layout: Dados da barbearia carregados:", data.nome);
+        setBarbeariaPerfil({
+          id: data.id,
+          nome: data.nome || 'Resenha Barber',
+          logo_url: data.logo_url || '',
+          plano: (data.plano || 'FREE').toUpperCase(),
+          endereco: data.endereco || '',
+          whatsapp: data.whatsapp || ''
+        });
+      } else {
+        console.log("Layout: Nenhuma barbearia encontrada no DB ou RLS bloqueando.");
+        setBarbeariaPerfil({
+          id: '',
+          nome: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Minha Barbearia',
+          logo_url: '',
+          plano: 'FREE',
+          endereco: '',
+          whatsapp: ''
         });
       }
+
+      // 3. Sincronização WhatsApp (Silenciosa)
+      fetch('/api/whatsapp/status').then(res => res.json()).then(stData => {
+        if (stData.connected && stData.number) {
+          setBarbeariaPerfil(prev => ({ ...prev, whatsapp: stData.number }));
+        }
+      }).catch(() => {});
+
+    } catch (error) {
+      console.error("Layout: Erro crítico em fetchBarbearia:", error);
+    } finally {
+      // Garantia final de que o nome não ficará como "Carregando..."
+      setBarbeariaPerfil(prev => {
+        if (prev.nome === 'Carregando...') {
+          return { ...prev, nome: 'Barbearia' };
+        }
+        return prev;
+      });
     }
+  }
+
+  useEffect(() => {
     fetchBarbearia();
   }, []);
 
@@ -379,7 +374,10 @@ export default function DashboardLayout({
         </nav>
 
         <div className="sidebar-footer">
-          <div className="user-profile" onClick={() => setIsProfileModalOpen(true)} style={{ cursor: 'pointer' }}>
+          <div className="user-profile" onClick={() => {
+            fetchBarbearia(); // Refetch data before opening modal
+            setIsProfileModalOpen(true);
+          }} style={{ cursor: 'pointer' }}>
             {barbeariaPerfil.logo_url ? (
               <img src={barbeariaPerfil.logo_url} alt="Profile" className="avatar" style={{ objectFit: 'cover' }} />
             ) : (
@@ -390,10 +388,10 @@ export default function DashboardLayout({
             <div className="user-info">
               <span className="user-name">{barbeariaPerfil.nome}</span>
               <span className="user-role" style={{ 
-                color: barbeariaPerfil.plano === 'PRO' ? '#f97316' : 'var(--text-secondary)',
+                color: barbeariaPerfil.plano === 'PRO' ? '#f97316' : '#94a3b8',
                 fontWeight: barbeariaPerfil.plano === 'PRO' ? 'bold' : 'normal'
               }}>
-                Plano {barbeariaPerfil.plano}
+                {barbeariaPerfil.plano === 'PRO' ? '💎 Plano PRO' : 'Plano Grátis'}
               </span>
             </div>
           </div>
@@ -422,18 +420,20 @@ export default function DashboardLayout({
                 )}
                 <div style={{ position: 'absolute', bottom: '0', right: '0', background: '#10b981', width: '25px', height: '25px', borderRadius: '50%', border: '3px solid var(--bg-secondary)' }}></div>
               </div>
-              <h2 style={{ fontSize: '1.5rem', marginBottom: '0.2rem' }}>{barbeariaPerfil.nome}</h2>
-              <span style={{ 
-                background: barbeariaPerfil.plano === 'PRO' ? 'linear-gradient(135deg, #f97316, #eab308)' : 'var(--bg-tertiary)',
-                color: 'white',
-                padding: '4px 12px',
-                borderRadius: '20px',
-                fontSize: '0.8rem',
-                fontWeight: 'bold',
-                textTransform: 'uppercase'
-              }}>
-                Plano {barbeariaPerfil.plano}
-              </span>
+              <h2 style={{ fontSize: '1.5rem', marginBottom: '0.2rem', color: 'white' }}>{barbeariaPerfil.nome || 'Minha Barbearia'}</h2>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem' }}>
+                <span style={{ 
+                  background: barbeariaPerfil.plano === 'PRO' ? 'linear-gradient(135deg, #f97316, #eab308)' : 'var(--bg-tertiary)',
+                  color: 'white',
+                  padding: '4px 12px',
+                  borderRadius: '20px',
+                  fontSize: '0.75rem',
+                  fontWeight: 'bold',
+                  textTransform: 'uppercase'
+                }}>
+                  {barbeariaPerfil.plano === 'PRO' ? '💎 PLANO PRO ATIVO' : 'PLANO FREE'}
+                </span>
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
