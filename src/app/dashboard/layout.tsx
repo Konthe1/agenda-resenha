@@ -44,8 +44,12 @@ export default function DashboardLayout({
 
   async function fetchBarbearia() {
     try {
-      console.log("Layout: Iniciando fetchBarbearia...");
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      let { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (!user) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        user = sessionData.session?.user || null;
+      }
       
       if (authError || !user) {
         console.log("Layout: Erro ou usuário não encontrado no Auth:", authError);

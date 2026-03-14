@@ -128,163 +128,82 @@ export default function ConfiguracoesPage() {
   };
 
   const handleSavePerfil = async () => {
-     setIsSubmitting(true);
-     try {
-        const { data: userData } = await supabase.auth.getUser();
-        const userId = userData.user?.id;
-        
-        const payload = {
-           nome: barbeariaPerfil.nome,
-           slug: barbeariaPerfil.slug,
-           endereco: barbeariaPerfil.endereco,
-           logo_url: barbeariaPerfil.logo_url,
-           whatsapp: barbeariaPerfil.whatsapp,
-           owner_id: userId
-        };
+      setIsSubmitting(true);
+      try {
+         let { data: { user }, error: authErr } = await supabase.auth.getUser();
+         if (!user) {
+            const { data: sess } = await supabase.auth.getSession();
+            user = sess.session?.user || null;
+         }
+         if (!user) throw new Error("Sessão expirada. Por favor, faça login novamente.");
 
-        // Se já temos um ID, incluímos no upsert para atualizar a mesma linha.
-        const { data, error } = await supabase
-           .from('barbearias')
-           .upsert(barbeariaPerfil.id ? { ...payload, id: barbeariaPerfil.id } : payload)
-           .select()
-           .single();
-        
-        if (error) throw error;
-        
-        if (data) {
-           setBarbeariaPerfil({
-              id: data.id,
-              nome: data.nome || '',
-              slug: data.slug || '',
-              endereco: data.endereco || '',
-              logo_url: data.logo_url || '',
-              whatsapp: data.whatsapp || '',
-              plano: data.plano || 'FREE'
-           });
-        }
-        
-        alert("Perfil da barbearia atualizado com sucesso!");
-     } catch (e: any) {
-        console.error("Erro ao salvar perfil:", e);
-        alert("Erro ao salvar perfil: " + e.message);
-     } finally {
-        setIsSubmitting(false);
-     }
-  };
+         const userId = user.id;
+         
+         // BUSCA O ID NO BANCO PELO OWNER_ID ANTES DE SALVAR (Evita duplicação por Slug)
+         let currentId = barbeariaPerfil.id;
+         if (!currentId) {
+            const { data: existing } = await supabase
+               .from('barbearias')
+               .select('id')
+               .eq('owner_id', userId)
+               .maybeSingle();
+            
+            if (existing) currentId = existing.id;
+         }
 
-  // Audio Module Logic
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      const chunks: Blob[] = [];
+         const payload: any = {
+            nome: barbeariaPerfil.nome,
+            slug: barbeariaPerfil.slug,
+            endereco: barbeariaPerfil.endereco,
+            logo_url: barbeariaPerfil.logo_url,
+            whatsapp: barbeariaPerfil.whatsapp,
+            owner_id: userId
+         };
 
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunks.push(e.data);
-      };
+         if (currentId) payload.id = currentId;
 
-      recorder.onstop = async () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
-        setAudioChunks([]); // reset for next time
-        // Upload to Supabase
-        await saveAudio(blob);
-      };
+         const { data, error } = await supabase
+            .from('barbearias')
+            .upsert(payload) 
+            .select()
+            .single();
+         
+         if (error) throw error;
+         
+         if (data) {
+            setBarbeariaPerfil({
+               id: data.id,
+               nome: data.nome || '',
+               slug: data.slug || '',
+               endereco: data.endereco || '',
+               logo_url: data.logo_url || '',
+               whatsapp: data.whatsapp || '',
+               plano: (data.plano || 'FREE').toUpperCase()
+            });
+            alert("Perfil salvo com sucesso!");
+         }
+         
+      } catch (e: any) {
+         console.error("Erro ao salvar perfil:", e);
+         alert("Erro ao salvar perfil: " + (e.message || "Erro desconhecido"));
+      } finally {
+         setIsSubmitting(false);
+      }
+   };
 
-      setMediaRecorder(recorder);
-      setAudioChunks([]);
-      recorder.start();
-      setIsRecording(true);
-    } catch (e: any) {
-      alert("Permissão de microfone negada ou erro: " + e.message);
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorder) {
-      mediaRecorder.stop();
-      mediaRecorder.stream.getTracks().forEach(track => track.stop());
-      setIsRecording(false);
-    }
-  };
-
-  const saveAudio = async (blob: Blob) => {
-    if (!newAudioData.barbeiro_id) {
-      alert("Selecione um barbeiro antes de gravar.");
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      const fileName = `${Date.now()}-audio.webm`;
-      const { error: uploadError } = await supabase.storage
-        .from('barbearia-audios')
-        .upload(fileName, blob);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('barbearia-audios')
-        .getPublicUrl(fileName);
-
-      const payload = {
-        barbearia_id: barbeariaPerfil.id,
-        barbeiro_id: newAudioData.barbeiro_id,
-        cliente_id: newAudioData.cliente_id || null,
-        gatilho: newAudioData.gatilho,
-        audio_url: urlData.publicUrl
-      };
-
-      const { error: dbError } = await supabase.from('audios_personalizados').insert(payload);
-      if (dbError) throw dbError;
-
-      // Refresh list
-      const { data: aData } = await supabase.from('audios_personalizados').select('*, barbeiros(nome), clientes(nome)').order('criado_em', { ascending: false });
-      if (aData) setPersonalizedAudios(aData);
-      
-      alert("Áudio gravado e salvo com sucesso!");
-    } catch (e: any) {
-      alert("Erro ao salvar áudio: " + e.message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDeleteAudio = async (audioId: string) => {
-    if (!confirm("Deseja realmente excluir este áudio?")) return;
-    try {
-      await supabase.from('audios_personalizados').delete().eq('id', audioId);
-      setPersonalizedAudios(personalizedAudios.filter(a => a.id !== audioId));
-    } catch (e: any) {
-      alert("Erro ao excluir áudio: " + e.message);
-    }
-  };
-
-  const handleDeleteBarber = async (id: string) => {
-    if (!confirm("Remover profissional?")) return;
-    try {
-      const { error } = await supabase.from('barbeiros').delete().eq('id', id);
-      if (error) throw error;
-      setBarbeiros(barbeiros.filter(b => b.id !== id));
-    } catch (e: any) {
-      alert("Erro: " + e.message);
-    }
-  };
-
-  const handleDeleteService = async (id: string) => {
-    if (!confirm("Remover serviço?")) return;
-    try {
-      const { error } = await supabase.from('servicos').delete().eq('id', id);
-      if (error) throw error;
-      setServicos(servicos.filter(s => s.id !== id));
-    } catch (e: any) {
-      alert("Erro: " + e.message);
-    }
-  };
-
-  useEffect(() => {
-    async function loadData() {
+   async function loadData() {
       setIsLoading(true);
       try {
         console.log("Config: Iniciando loadData...");
+        let { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          const { data: sess } = await supabase.auth.getSession();
+          user = sess.session?.user || null;
+        }
+        if (!user) {
+          setIsLoading(false);
+          return;
+        }
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           setIsLoading(false);
