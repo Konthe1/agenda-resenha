@@ -69,7 +69,7 @@ export default function DashboardOverview() {
               status_pagamento: 'Ativo',
               slug: 'home-' + Math.floor(Math.random() * 10000)
             })
-            .select('id, plano')
+            .select('id, plano, slug')
             .single();
           barbData = newBarb;
         }
