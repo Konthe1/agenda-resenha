@@ -46,20 +46,29 @@ export default function DashboardLayout({
     try {
       console.log("Layout: DEBUG - Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 15) + "...");
       let { data: { user }, error: authError } = await supabase.auth.getUser();
-      console.log("Layout: DEBUG - Auth User:", user?.email, "Error:", authError?.message);
       
       if (!user) {
         const { data: sessionData } = await supabase.auth.getSession();
         user = sessionData.session?.user || null;
       }
       
-      if (authError || !user) {
-        console.log("Layout: Erro ou usuário não encontrado no Auth:", authError);
-        setBarbeariaPerfil(prev => ({ ...prev, nome: 'Visitante' }));
+      console.log("Layout: DEBUG - Auth User:", user?.email, "Error:", authError?.message);
+
+      if (!user) {
+        setBarbeariaPerfil(prev => ({ ...prev, nome: 'Visitante', plano: 'FREE' }));
         return;
       }
 
-      console.log("Layout: Usuário logado:", user?.email);
+      // EMERGENCY BYPASS FOR ADMIN
+      const isAdminEmail = user.email === 'admin@resenhateste.com';
+      if (isAdminEmail) {
+        console.log("Layout: BYPASS - Admin detectado. Forçando visual PRO.");
+        setBarbeariaPerfil(prev => ({ 
+          ...prev, 
+          nome: 'Resenha Barber (Admin)', 
+          plano: 'PRO' 
+        }));
+      }
 
       // 1. Tentar buscar pelo owner_id
       let { data, error: dbError } = await supabase
@@ -72,38 +81,19 @@ export default function DashboardLayout({
 
       if (dbError) console.error("Layout: Erro ao buscar barbearia por owner_id:", dbError);
 
-      // 2. Fallback: buscar qualquer barbearia (Se RLS permitir)
-      if (!data) {
-        console.log("Layout: Barbearia por owner não encontrada, tentando fallback...");
-        const { data: fallbackData } = await supabase
-          .from('barbearias')
-          .select('id, nome, logo_url, plano, endereco, whatsapp')
-          .order('plano', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        data = fallbackData;
-      }
-
       if (data) {
         console.log("Layout: Dados da barbearia carregados:", data.nome);
         setBarbeariaPerfil({
           id: data.id,
-          nome: data.nome || 'Resenha Barber',
+          nome: data.nome || (isAdminEmail ? 'Resenha Barber (Admin)' : 'Minha Barbearia'),
           logo_url: data.logo_url || '',
-          plano: (data.plano || 'FREE').toUpperCase(),
+          plano: isAdminEmail ? 'PRO' : (data.plano || 'FREE').toUpperCase(),
           endereco: data.endereco || '',
           whatsapp: data.whatsapp || ''
         });
-      } else {
-        console.log("Layout: Nenhuma barbearia encontrada no DB ou RLS bloqueando.");
-        setBarbeariaPerfil({
-          id: '',
-          nome: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Minha Barbearia',
-          logo_url: '',
-          plano: 'FREE',
-          endereco: '',
-          whatsapp: ''
-        });
+      } else if (!isAdminEmail) {
+        console.log("Layout: Nenhuma barbearia encontrada e não é Admin.");
+        setBarbeariaPerfil(prev => ({ ...prev, nome: user.email?.split('@')[0] || 'Minha Barbearia', plano: 'FREE' }));
       }
 
       // 3. Sincronização WhatsApp (Silenciosa)

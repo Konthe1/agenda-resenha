@@ -317,6 +317,9 @@ export default function ConfiguracoesPage() {
           .limit(1)
           .maybeSingle();
         
+        const isAdminEmail = user.email === 'admin@resenhateste.com';
+
+        
         // 2. Fallback
         if (!barbData) {
           console.log("Config: Barbearia por owner não encontrada, tentando fallback...");
@@ -332,12 +335,12 @@ export default function ConfiguracoesPage() {
         if (barbData) {
           setBarbeariaPerfil({
              id: barbData.id,
-             nome: barbData.nome || '',
+             nome: barbData.nome || (isAdminEmail ? 'Resenha Barber (Admin)' : ''),
              slug: barbData.slug || '',
              endereco: barbData.endereco || '',
              logo_url: barbData.logo_url || '',
              whatsapp: barbData.whatsapp || '',
-             plano: (barbData.plano || 'FREE').toUpperCase()
+             plano: isAdminEmail ? 'PRO' : (barbData.plano || 'FREE').toUpperCase()
           });
 
           // Fetch dependent data
