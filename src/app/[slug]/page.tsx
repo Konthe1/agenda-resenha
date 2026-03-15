@@ -376,20 +376,20 @@ export default function BookingPage() {
       <div className="booking-card animate-fade-in" style={{ '--accent-primary': barbearia.cor_primaria || '#F97316' } as React.CSSProperties}>
         
         {step !== 5 && (
-          <div className="barbershop-header">
-            <div className="barbershop-logo" style={{ borderColor: barbearia.cor_primaria || 'var(--accent-primary)' }}>
-              {barbearia.logo_url ? <img src={barbearia.logo_url} alt={barbearia.nome} /> : barbearia.nome.charAt(0)}
+          <>
+            <div className="barbershop-destaque-card">
+              <div className="barbershop-logo" style={{ borderColor: barbearia.cor_primaria || 'var(--accent-primary)' }}>
+                {barbearia.logo_url ? <img src={barbearia.logo_url} alt={barbearia.nome} /> : barbearia.nome.charAt(0)}
+              </div>
+              <div className="destaque-info">
+                <h1>{barbearia.nome || 'Minha Barbearia'}</h1>
+                {barbearia.endereco && <p>📍 {barbearia.endereco}</p>}
+              </div>
             </div>
-            <h1 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '0.4rem', color: 'white' }}>{barbearia.nome || 'Minha Barbearia'}</h1>
-            {barbearia.endereco && (
-              <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.85rem', marginTop: '0.25rem', opacity: 0.9 }}>
-                📍 {barbearia.endereco}
-              </p>
-            )}
 
             {/* NOVOS BENEFÍCIOS (FIDELIDADE & CASHBACK) */}
             {(barbearia.fidelidade_ativa || barbearia.cashback_ativo) && (
-              <div className="benefits-highlight">
+              <div className="benefits-highlight" style={{ marginBottom: '2rem' }}>
                 {barbearia.fidelidade_ativa && (
                   <div className="benefit-card fidelity">
                     <div className="benefit-icon">🎁</div>
@@ -412,8 +412,10 @@ export default function BookingPage() {
               </div>
             )}
 
-            <p style={{ marginTop: barbearia.endereco ? '0.75rem' : '0' }}>Selecione abaixo o que você deseja</p>
-          </div>
+            <div className="step-instruction">
+              <p>Selecione abaixo o que você deseja</p>
+            </div>
+          </>
         )}
 
         {/* STEP 1: BARBER */}
@@ -428,7 +430,10 @@ export default function BookingPage() {
                   <div 
                     key={barbeiro.id}
                     className={`service-item ${selectedBarbeiro?.id === barbeiro.id ? 'selected' : ''}`}
-                    onClick={() => setSelectedBarbeiro(barbeiro)}
+                    onClick={() => {
+                      setSelectedBarbeiro(barbeiro);
+                      setStep(2);
+                    }}
                     style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '1.5rem', gap: '0.8rem', justifyContent: 'center' }}
                   >
                     <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-primary) 0%, #ea580c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.8rem', color: 'white', overflow: 'hidden' }}>
@@ -450,14 +455,6 @@ export default function BookingPage() {
                 </div>
               )}
             </div>
-            <button 
-              className="btn-confirm" 
-              style={{ marginTop: '1.5rem' }}
-              disabled={!selectedBarbeiro}
-              onClick={() => setStep(2)}
-            >
-              Continuar ✨
-            </button>
           </div>
         )}
 
@@ -482,7 +479,10 @@ export default function BookingPage() {
                     <div 
                       key={svc.id}
                       className={`service-item ${selectedService?.id === svc.id ? 'selected' : ''}`}
-                      onClick={() => setSelectedService(svc)}
+                      onClick={() => {
+                        setSelectedService(svc);
+                        setStep(3);
+                      }}
                     >
                       <div className="service-info">
                         <h3>{svc.nome}</h3>
@@ -499,19 +499,6 @@ export default function BookingPage() {
                   ⚠️ Nenhum serviço cadastrado nesta barbearia.
                 </div>
               )}
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
-              <button className="btn-confirm" style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', flex: '1' }} onClick={() => setStep(1)}>
-                Voltar
-              </button>
-              <button 
-                className="btn-confirm" 
-                style={{ flex: '2' }}
-                disabled={!selectedService}
-                onClick={() => setStep(3)}
-              >
-                Continuar ✨
-              </button>
             </div>
           </div>
         )}
@@ -535,7 +522,9 @@ export default function BookingPage() {
                 <button 
                   key={i}
                   className={`day-btn ${selectedDate?.toDateString() === date.toDateString() ? 'selected' : ''}`}
-                  onClick={() => setSelectedDate(date)}
+                  onClick={() => {
+                    setSelectedDate(date);
+                  }}
                 >
                   <span className="day-name">{date.toLocaleDateString('pt-BR', { weekday: 'short' })}</span>
                   <span className="day-number">{date.getDate()}</span>
@@ -551,7 +540,10 @@ export default function BookingPage() {
                     <button 
                       key={i}
                       className={`time-btn ${selectedTime === time ? 'selected' : ''}`}
-                      onClick={() => setSelectedTime(time)}
+                      onClick={() => {
+                        setSelectedTime(time);
+                        setStep(4);
+                      }}
                     >
                       {time}
                     </button>
@@ -560,19 +552,7 @@ export default function BookingPage() {
               </>
             )}
 
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
-              <button className="btn-confirm" style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', flex: '1' }} onClick={() => setStep(2)}>
-                Voltar
-              </button>
-              <button 
-                className="btn-confirm" 
-                style={{ flex: '2' }}
-                disabled={!selectedDate || !selectedTime}
-                onClick={() => setStep(4)}
-              >
-                Confirmar Horário
-              </button>
-            </div>
+
           </div>
         )}
 

@@ -1,52 +1,111 @@
 .booking-container {
   min-height: 100vh;
-  background-color: var(--bg-primary);
+  background-color: #0c0a09;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem 1rem;
+  padding: 3rem 1rem;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Background Graphic Elements */
+.booking-container::before {
+  content: "";
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 40%;
+  height: 40%;
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.15) 0%, transparent 70%);
+  filter: blur(80px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.booking-container::after {
+  content: "";
+  position: absolute;
+  bottom: -10%;
+  right: -10%;
+  width: 50%;
+  height: 50%;
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.1) 0%, transparent 70%);
+  filter: blur(100px);
+  z-index: 0;
+  pointer-events: none;
 }
 
 .booking-card {
   width: 100%;
   max-width: 500px;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--bg-tertiary);
-  border-radius: 1.5rem;
+  background: rgba(28, 25, 23, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 2rem;
   padding: 2rem;
   position: relative;
-  overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.barbershop-header {
-  text-align: center;
-  margin-bottom: 2.5rem;
+.barbershop-destaque-card {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1.25rem;
+  margin-bottom: 2rem;
+  text-align: left;
 }
 
 .barbershop-logo {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  margin: 0 auto 1rem;
-  background-color: var(--bg-tertiary);
+  width: 70px;
+  height: 70px;
+  border-radius: 1.25rem;
+  background: var(--bg-tertiary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.5rem;
-  box-shadow: 0 0 20px rgba(249, 115, 22, 0.15);
-  border: 2px solid var(--bg-tertiary);
+  font-size: 2rem;
+  border: 2px solid var(--accent-primary);
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
-.barbershop-header h1 {
-  font-size: 1.5rem;
-  color: var(--text-primary);
-  margin-bottom: 0.5rem;
+.barbershop-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.barbershop-header p {
+.destaque-info h1 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.02em;
+}
+
+.destaque-info p {
+  font-size: 0.85rem;
   color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+.step-instruction {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.step-instruction p {
   font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 /* BENEFITS HIGHLIGHT STYLES */
