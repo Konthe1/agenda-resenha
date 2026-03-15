@@ -41,7 +41,6 @@ export default function MarketingPage() {
         
         let barbearia = null;
         if (user) {
-          // Admin Bypass
           const isAdmin = user.email === 'admin@resenhateste.com';
 
           // 1. Tentar buscar pelo owner_id
@@ -64,35 +63,35 @@ export default function MarketingPage() {
               .maybeSingle();
             barbearia = firstBarb;
           }
-        }
 
-        if (barbearia) {
-          setBarbeariaId(barbearia.id);
-          setPlano(user.email === 'admin@resenhateste.com' ? 'PRO' : (barbearia.plano || 'FREE').toUpperCase());
-          setSettings({
-            fidelidade_ativa: barbearia.fidelidade_ativa ?? true,
-            fidelidade_cortes: barbearia.fidelidade_cortes ?? 10,
-            fidelidade_premio_servico_id: barbearia.fidelidade_premio_servico_id || '',
-            cashback_ativa: barbearia.cashback_ativo ?? true,
-            cashback_percentual: barbearia.cashback_percentual ?? 5
-          });
+          if (barbearia) {
+            setBarbeariaId(barbearia.id);
+            setPlano(isAdmin ? 'PRO' : (barbearia.plano || 'FREE').toUpperCase());
+            setSettings({
+              fidelidade_ativa: barbearia.fidelidade_ativa ?? true,
+              fidelidade_cortes: barbearia.fidelidade_cortes ?? 10,
+              fidelidade_premio_servico_id: barbearia.fidelidade_premio_servico_id || '',
+              cashback_ativa: barbearia.cashback_ativo ?? true,
+              cashback_percentual: barbearia.cashback_percentual ?? 5
+            });
 
-          // 2. Buscar Serviços
-          const { data: servData } = await supabase
-            .from('servicos')
-            .select('id, nome')
-            .eq('barbearia_id', barbearia.id)
-            .order('nome');
-          
-          if (servData) setServicos(servData);
+            // 2. Buscar Serviços
+            const { data: servData } = await supabase
+              .from('servicos')
+              .select('id, nome')
+              .eq('barbearia_id', barbearia.id)
+              .order('nome');
+            
+            if (servData) setServicos(servData);
 
-          // 3. Métricas Básicas
-          const { count } = await supabase
-            .from('clientes')
-            .select('*', { count: 'exact', head: true })
-            .eq('barbearia_id', barbearia.id);
-          
-          if (count !== null) setTotalClientes(count);
+            // 3. Métricas Básicas
+            const { count } = await supabase
+              .from('clientes')
+              .select('*', { count: 'exact', head: true })
+              .eq('barbearia_id', barbearia.id);
+            
+            if (count !== null) setTotalClientes(count);
+          }
         }
       } catch (error) {
         console.error("Erro Marketing:", error);
