@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase/client"; // Hooking into the realtime c
 
 export default function DashboardOverview() {
   const [copySuccess, setCopySuccess] = useState(false);
-  const barbershopLink = "agendaresenha.com/resenhabarber"; // Ideal: vir do banco
+  const [barbershopLink, setBarbershopLink] = useState(""); 
   
   // Real Data State
   const [metrics, setMetrics] = useState({ 
@@ -16,6 +16,7 @@ export default function DashboardOverview() {
   });
   const [appointments, setAppointments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [plano, setPlano] = useState("PRO"); // Otimista
 
   // Load Initial Data (Mock fallback if DB fails/is empty)
   useEffect(() => {
@@ -29,21 +30,27 @@ export default function DashboardOverview() {
         }
 
         console.log("Dashboard: Usuário logado:", user.email);
+        const isAdmin = user.email === 'admin@resenhateste.com';
 
         // 1. Tentar buscar pelo owner_id
         let { data: barbData } = await supabase
           .from('barbearias')
-          .select('id, plano')
+          .select('id, plano, slug')
           .eq('owner_id', user.id)
           .order('plano', { ascending: false })
           .limit(1)
           .maybeSingle();
 
+        if (barbData) {
+           setPlano(isAdmin ? "PRO" : (barbData.plano || "FREE").toUpperCase());
+           setBarbershopLink(`agendaresenha.com/${barbData.slug || 'resenhabarber'}`);
+        }
+
         // 2. Fallback: buscar qualquer barbearia
         if (!barbData) {
           const { data: fallbackData } = await supabase
             .from('barbearias')
-            .select('id, plano')
+            .select('id, plano, slug')
             .order('plano', { ascending: false })
             .limit(1)
             .maybeSingle();

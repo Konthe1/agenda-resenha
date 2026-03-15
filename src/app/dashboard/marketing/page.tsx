@@ -9,9 +9,9 @@ export default function MarketingPage() {
   const [totalClientes, setTotalClientes] = useState(0);
   const [promoMessage, setPromoMessage] = useState("Fala chefe, tudo certo? Senti sua falta aqui na Resenha Barber! Tem um cupom de 20% de desconto te esperando pra essa semana. Bora dar um talento no visual? Agende aqui: agendaresenha.com/resenhabarber");
   const [isSending, setIsSending] = useState(false);
+  const [plano, setPlano] = useState('PRO'); // Otimista por padrão para evitar flicker
   const [isLoading, setIsLoading] = useState(true);
   const [barbeariaId, setBarbeariaId] = useState<string | null>(null);
-  const [plano, setPlano] = useState<string>('FREE');
   const [servicos, setServicos] = useState<any[]>([]);
   
   // Advanced Filtros
@@ -41,6 +41,9 @@ export default function MarketingPage() {
         
         let barbearia = null;
         if (user) {
+          // Admin Bypass
+          const isAdmin = user.email === 'admin@resenhateste.com';
+
           // 1. Tentar buscar pelo owner_id
           const { data: barbOwner } = await supabase
             .from('barbearias')
@@ -65,7 +68,7 @@ export default function MarketingPage() {
 
         if (barbearia) {
           setBarbeariaId(barbearia.id);
-          setPlano((barbearia.plano || 'FREE').toUpperCase());
+          setPlano(user.email === 'admin@resenhateste.com' ? 'PRO' : (barbearia.plano || 'FREE').toUpperCase());
           setSettings({
             fidelidade_ativa: barbearia.fidelidade_ativa ?? true,
             fidelidade_cortes: barbearia.fidelidade_cortes ?? 10,
