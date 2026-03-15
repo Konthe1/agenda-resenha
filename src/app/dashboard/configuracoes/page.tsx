@@ -1109,9 +1109,12 @@ export default function ConfiguracoesPage() {
                 disabled={isSubmitting || !newServiceData.nome || !newServiceData.preco_base}
                 style={{ padding: '0.6rem 1.2rem', opacity: (isSubmitting || !newServiceData.nome || !newServiceData.preco_base) ? 0.5 : 1 }}
                 onClick={async () => {
+                   if (!barbeariaPerfil.id) {
+                     alert("ID da barbearia não encontrado ao salvar serviço. Tente recarregar a página.");
+                     return;
+                   }
                    setIsSubmitting(true);
-                   const { data: bData } = await supabase.from('barbearias').select('id').limit(1).single();
-                   const activeBarbeariaId = bData?.id || '12345678-1234-1234-1234-123456789012';
+                   const activeBarbeariaId = barbeariaPerfil.id;
                    
                    const { data, error } = await supabase.from('servicos').insert({ 
                      barbearia_id: activeBarbeariaId, 
@@ -1164,9 +1167,12 @@ export default function ConfiguracoesPage() {
                 disabled={isSubmitting || !newBarberData.nome}
                 style={{ padding: '0.6rem 1.2rem', opacity: (isSubmitting || !newBarberData.nome) ? 0.5 : 1 }}
                 onClick={async () => {
+                   if (!barbeariaPerfil.id) {
+                     alert("ID da barbearia não encontrado ao salvar barbeiro. Tente recarregar a página.");
+                     return;
+                   }
                    setIsSubmitting(true);
-                   const { data: bData } = await supabase.from('barbearias').select('id').limit(1).single();
-                   const activeBarbeariaId = bData?.id || '12345678-1234-1234-1234-123456789012';
+                   const activeBarbeariaId = barbeariaPerfil.id;
                    
                    const foto = newBarberData.nome.charAt(0).toUpperCase();
                    const { data, error } = await supabase.from('barbeiros').insert({ 
