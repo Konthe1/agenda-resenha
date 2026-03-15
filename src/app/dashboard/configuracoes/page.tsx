@@ -357,11 +357,18 @@ export default function ConfiguracoesPage() {
           if (cRes.data) setClientes(cRes.data);
         }
 
-        // WhatsApp Sync (Background)
-        fetch('/api/whatsapp/status').then(r => r.json()).then(st => {
+        // WhatsApp Sync (Background e Persistente)
+        fetch('/api/whatsapp/status').then(r => r.json()).then(async st => {
            if (st.connected) {
               setIsWhatsappConnected(true);
-              if (st.number) setBarbeariaPerfil(prev => ({ ...prev, whatsapp: st.number }));
+              if (st.number) {
+                 setBarbeariaPerfil(prev => ({ ...prev, whatsapp: st.number }));
+                 
+                 // Sincroniza com o banco se for diferente
+                 if (barbData && barbData.whatsapp !== st.number) {
+                    await supabase.from('barbearias').update({ whatsapp: st.number }).eq('id', barbData.id);
+                 }
+              }
            } else {
               setQrCodeMessage("📱 Sincronizando WhatsApp...");
               fetch('/api/whatsapp/connect', { method: 'POST' }).then(r => r.json()).then(dataConnect => {

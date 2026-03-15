@@ -96,10 +96,17 @@ export default function DashboardLayout({
         setBarbeariaPerfil(prev => ({ ...prev, nome: user.email?.split('@')[0] || 'Minha Barbearia', plano: 'FREE' }));
       }
 
-      // 3. Sincronização WhatsApp (Silenciosa)
-      fetch('/api/whatsapp/status').then(res => res.json()).then(stData => {
+      // 3. Sincronização WhatsApp (Silenciosa e Persistente)
+      fetch('/api/whatsapp/status').then(res => res.json()).then(async stData => {
         if (stData.connected && stData.number) {
+          console.log("Layout: WhatsApp Real detectado:", stData.number);
           setBarbeariaPerfil(prev => ({ ...prev, whatsapp: stData.number }));
+          
+          // Se o número real for diferente do que está no banco, atualiza o banco automaticamente
+          if (data && data.whatsapp !== stData.number) {
+             console.log("Layout: Sincronizando número real com o banco de dados...");
+             await supabase.from('barbearias').update({ whatsapp: stData.number }).eq('id', data.id);
+          }
         }
       }).catch(() => {});
 

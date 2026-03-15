@@ -10,7 +10,7 @@ export async function GET() {
       return NextResponse.json({ connected: false });
     }
 
-    const res = await fetch(`${renderUrl}/instance/connectionState/${instanceName}`, {
+    const res = await fetch(`${renderUrl}/instance/fetchInstances?instanceName=${instanceName}`, {
       method: 'GET',
       headers: { 'apikey': apiKey }
     });
@@ -21,22 +21,22 @@ export async function GET() {
 
     const data = await res.json();
     
-    // Na Evolution API, o state pode vir como "open", "connecting", "close" 
-    // Mapeamos open para true.
-    if (data && data.instance && data.instance.state === 'open') {
-      // Tentar extrair o número do JID (owner) se disponível
+    // fetchInstances retorna um array
+    const instance = Array.isArray(data) ? data.find((i: any) => i.name === instanceName) : null;
+    
+    if (instance && instance.connectionStatus === 'open') {
       let number = null;
-      if (data.instance.owner) {
-        number = data.instance.owner.split('@')[0];
+      if (instance.ownerJid) {
+        number = instance.ownerJid.split('@')[0];
       }
       return NextResponse.json({ 
         connected: true, 
         number: number,
-        state: data.instance.state 
+        state: instance.connectionStatus 
       });
     }
 
-    return NextResponse.json({ connected: false, state: data?.instance?.state || 'close' });
+    return NextResponse.json({ connected: false, state: instance?.connectionStatus || 'close' });
   } catch (error) {
     console.error("Erro ao checar status de conexão:", error);
     return NextResponse.json({ connected: false });
