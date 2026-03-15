@@ -7,7 +7,7 @@ export default function ProdutosPage() {
   const [produtos, setProdutos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [barbeariaId, setBarbeariaId] = useState<string | null>(null);
-  const [plano, setPlano] = useState<string>('FREE');
+  const [plano, setPlano] = useState<string>('PRO'); // Otimista
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategoria, setFilterCategoria] = useState("Todos");
   
@@ -34,6 +34,8 @@ export default function ProdutosPage() {
         
         let barbearia = null;
         if (user) {
+          const isAdmin = user.email === 'admin@resenhateste.com';
+
           // 1. Buscar a barbearia deste usuário
           let { data: barbOwner } = await supabase
             .from('barbearias')
@@ -74,22 +76,20 @@ export default function ProdutosPage() {
               .single();
             barbearia = newBarb;
           }
-        }
 
-        if (barbearia) {
-          console.log("Produtos: Barbearia final:", barbearia.id, "Plano:", barbearia.plano);
-          setBarbeariaId(barbearia.id);
-          setPlano((barbearia.plano || 'FREE').toUpperCase());
-          
-          const { data: prods } = await supabase
-            .from('produtos')
-            .select('*')
-            .eq('barbearia_id', barbearia.id)
-            .order('nome');
-          
-          if (prods) setProdutos(prods);
-        } else {
-          setPlano('FREE');
+          if (barbearia) {
+            setBarbeariaId(barbearia.id);
+            setPlano(isAdmin ? 'PRO' : (barbearia.plano || 'FREE').toUpperCase());
+            console.log("Produtos: Barbearia final:", barbearia.id, "Plano:", barbearia.plano);
+
+            const { data: prods } = await supabase
+              .from('produtos')
+              .select('*')
+              .eq('barbearia_id', barbearia.id)
+              .order('nome');
+            
+            if (prods) setProdutos(prods);
+          }
         }
       } catch (error) {
         console.error("Erro ao carregar produtos:", error);

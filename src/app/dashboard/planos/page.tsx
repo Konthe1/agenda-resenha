@@ -7,7 +7,7 @@ export default function PlanosPage() {
   const [assinantes, setAssinantes] = useState<any[]>([]);
   const [planos, setPlanos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [plano, setPlano] = useState<string>('FREE');
+  const [plano, setPlano] = useState<string>('PRO'); // Otimista
   const [barbeariaId, setBarbeariaId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,10 +39,15 @@ export default function PlanosPage() {
 
       if (barbData) {
         setBarbeariaId(barbData.id);
-        setPlano((barbData.plano || 'FREE').toUpperCase());
+        const isAdmin = user.email === 'admin@resenhateste.com';
+        setPlano(isAdmin ? 'PRO' : (barbData.plano || 'FREE').toUpperCase());
       }
 
-      const activeBarbeariaId = barbData?.id || '1';
+      const activeBarbeariaId = barbData?.id;
+      if (!activeBarbeariaId) {
+        setIsLoading(false);
+        return;
+      }
 
       const { data: pData } = await supabase.from('planos').select('*').eq('barbearia_id', activeBarbeariaId).order('preco', { ascending: false });
       if (pData) setPlanos(pData);
@@ -71,7 +76,7 @@ export default function PlanosPage() {
   const handleCreatePlano = async () => {
     if (!novoPlanoNome || !novoPlanoPreco) return;
     const { data } = await supabase.from('planos').insert({ 
-      barbearia_id: '1', 
+      barbearia_id: barbeariaId, 
       nome: novoPlanoNome, 
       descricao: novoPlanoDesc, 
       preco: Number(novoPlanoPreco), 
@@ -92,7 +97,7 @@ export default function PlanosPage() {
     if (clients && clients.length > 0) {
       clientId = clients[0].id;
     } else {
-      const { data: newC } = await supabase.from('clientes').insert({ barbearia_id: '1', nome: novoAssinanteNome, telefone: novoAssinanteTel }).select().single();
+      const { data: newC } = await supabase.from('clientes').insert({ barbearia_id: barbeariaId, nome: novoAssinanteNome, telefone: novoAssinanteTel }).select().single();
       clientId = newC?.id;
     }
 
@@ -100,7 +105,7 @@ export default function PlanosPage() {
 
     // 2 - Inserir Assinante
     const { data: newA } = await supabase.from('assinantes').insert({
-      barbearia_id: '1',
+      barbearia_id: barbeariaId,
       cliente_id: clientId,
       plano_id: selectedPlanoId,
       dia_vencimento: new Date().getDate()

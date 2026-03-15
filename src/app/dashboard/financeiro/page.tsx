@@ -383,8 +383,8 @@ export default function FinanceiroPage() {
                      onChange={(e) => setFormData({...formData, tipo: e.target.value})}
                      style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'white' }}
                    >
-                     <option value="Saída">支出 (Despesa / Saída)</option>
-                     <option value="Entrada">收入 (Receita / Entrada)</option>
+                     <option value="Saída">Despesa / Saída</option>
+                     <option value="Entrada">Receita / Entrada</option>
                    </select>
                 </div>
                 
